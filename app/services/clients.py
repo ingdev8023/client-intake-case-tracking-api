@@ -1,5 +1,7 @@
 from app.models.models import db, User, Client, Case
+from flask import jsonify
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import select
 from datetime import datetime, date
 
 def add_client(client_data):
@@ -48,6 +50,20 @@ def add_client(client_data):
             return {"error": "Email already exists"}, 400
 
         return {"error": "Database error"}, 500
+
+
+def get_clients():
+    clients = db.session.execute(select(Client)).scalars().all()
+    results = [client.serialize() for client in clients]
+
+    return jsonify(results), 200
+    
+
+def get_client(client_id):
+    client = db.session.get(Client, client_id)
+    if client is None:
+        return jsonify({"error": "Client not found"}), 404
+    return client.serialize(),200
     
 
         
