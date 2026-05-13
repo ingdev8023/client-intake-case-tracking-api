@@ -1,7 +1,7 @@
 from app.models.models import db, Case, Client, User
 from flask import jsonify
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import select
+from sqlalchemy import select, and_, or_, text
 from datetime import datetime, date
 
 
@@ -53,7 +53,47 @@ def add_case(case_data):
 
         return {"error": "Database error"}, 500
 
-def get_cases():
+def get_cases(filters={}):
+    filters = filters or {}
+
+    query = select(Case)
+
+    allowed_filters = {
+        "case_status": Case.case_status,
+        "case_stage": Case.case_stage,
+        "case_type": Case.case_type,
+        "client_id": Case.client_id,
+        "created_after": Case.created_at,
+        "created_before":Case.created_at
+    }
+
+    conditions = []
+
+    for key, value in filters.items():
+        column = allowed_filters.get(key)
+
+        if column is None:
+            return {"error": f"Invalid filter: {key}"}, 400
+        
+        if key == "created_after":
+            try:
+                date_value = datetime.fromisoformat(value)
+            except ValueError:
+                return {"error": "Invalid date format. Use YYYY-MM-DD"}, 400
+
+            conditions.append(column > date_value)
+        elif key == "created_before":
+            try:
+                date_value = datetime.fromisoformat(value)
+            except ValueError:
+                return {"error": "Invalid date format. Use YYYY-MM-DD"}, 400
+            
+            conditions.append(column < date_value)
+        else:
+            conditions.append(column == value)
+
+
+    
     cases = db.session.execute(select(Case)).scalars().all()
     results = [case.serialize() for case in cases]
     return jsonify(results), 200

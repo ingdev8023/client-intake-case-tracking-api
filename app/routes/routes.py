@@ -1,4 +1,4 @@
-from flask import Blueprint, request, Response
+from flask import Blueprint, request, Response, jsonify
 from app.services.clients import add_client, get_clients, get_client
 from app.services.cases import add_case, get_cases, get_case
 
@@ -29,10 +29,15 @@ def cases():
         if not case_data:
             return {"error": "Invalid JSON"}, 400
         return add_case(case_data)
-    return get_cases()
+    
+    return get_cases(request.args.to_dict())
+
+    
 
 @routes_blueprint.route("/cases/<int:case_id>")
 def retrieve_case(case_id):
     return get_case(case_id)
+
+
     
     
