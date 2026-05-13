@@ -72,8 +72,8 @@ class Case(db.Model):
             "case_stage": self.case_stage,
             "created_at": str(self.created_at),
             "updated_at": str(self.updated_at),
-            "assigned_users": [user.user_id for user in self.assigned_users],
-            "client_id": self.client_id
+            "assigned_users": [user.serialize() for user in self.assigned_users],
+            "client": self.client.serialize() if self.client else None
         }
 
 class Client(db.Model):

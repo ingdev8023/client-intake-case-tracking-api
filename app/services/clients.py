@@ -1,4 +1,4 @@
-from app.models.models import db, User, Client, Case
+from app.models.models import db, Client
 from flask import jsonify
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import select
@@ -55,7 +55,6 @@ def add_client(client_data):
 def get_clients():
     clients = db.session.execute(select(Client)).scalars().all()
     results = [client.serialize() for client in clients]
-
     return jsonify(results), 200
     
 
