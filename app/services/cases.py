@@ -103,4 +103,37 @@ def get_case(case_id):
     if case is None:
         return jsonify({"error": "Case not found"}), 404
     return case.serialize(),200
+
+def edit_case(case_id, case_data):
+    case = db.session.get(Case, case_id)
+
+    if case is None:
+        return jsonify({"error": "Case not found"}), 404
+    if not case_data:
+        return jsonify({"error": "No data to update"}), 400
+    
+    allowed_edits = {
+        "case_status",
+        "case_stage",
+        "case_type",
+        "client_id",
+    }   
+    
+    try:
+        for key, value in case_data.items():
+            if key not in allowed_edits:
+                return {"error": f"Invalid field: {key}"}, 400
+
+            setattr(case, key, value)
+
+        db.session.commit()
+
+        return case.serialize(), 200
+
+    except IntegrityError:
+        db.session.rollback()
+        return {"error": "Database error"}, 500   
+    
+
+  
     
