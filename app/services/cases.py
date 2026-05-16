@@ -117,16 +117,29 @@ def edit_case(case_id, case_data):
         "case_stage",
         "case_type",
         "client_id",
+        "assigned_users_ids"
     }   
     
     try:
         for key, value in case_data.items():
             if key not in allowed_edits:
                 return {"error": f"Invalid field: {key}"}, 400
+            if key == "assigned_user_ids":
+                if not isinstance(value, list):
+                    return {"error": "assigned_user_ids must be a list"}, 400
 
-            setattr(case, key, value)
+                users = User.query.filter(User.user_id.in_(value)).all()
 
-        db.session.commit()
+                if len(users) != len(value):
+                    return {"error": "One or more users do not exist"}, 404
+
+                case.assigned_users = users
+
+            else:
+            
+                setattr(case, key, value)
+
+            db.session.commit()
 
         return case.serialize(), 200
 

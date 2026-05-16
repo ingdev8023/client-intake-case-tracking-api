@@ -11,12 +11,12 @@ with app.app_context():
     db.create_all()
 
     # --- Create User ---
-    user = User(
+    """ user = User(
         user_name="Daniel",
         user_email="daniel@test.com",
         user_role="admin"
     )
-    db.session.add(user)
+    db.session.add(user) """
 
     # --- Create Client ---
     client = Client(
