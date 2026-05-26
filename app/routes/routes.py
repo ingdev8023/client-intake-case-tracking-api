@@ -1,7 +1,7 @@
 from flask import Blueprint, request, Response, jsonify
 from app.services.clients import add_client, get_clients, get_client
 from app.services.users import add_user, get_users, get_user
-from app.services.cases import add_case, get_cases, get_case, edit_case
+from app.services.cases import add_case, get_cases, get_case, edit_case, delete_case
 
 routes_blueprint = Blueprint("routes", __name__)
 
@@ -36,10 +36,11 @@ def cases():
 @routes_blueprint.route("/cases/<int:case_id>")
 def retrieve_case(case_id):
     return get_case(case_id)
-    
 
-@routes_blueprint.route("/cases/<int:case_id>", methods=["PUT"])
+@routes_blueprint.route("/cases/<int:case_id>", methods=["PUT", "DELETE"])
 def case_edit(case_id):
+    if request.method == "DELETE":
+        return delete_case(case_id)
     case_data = request.get_json()
     if not case_data:
         return {"error": "Invalid JSON"}, 400

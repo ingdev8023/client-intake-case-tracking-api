@@ -145,8 +145,21 @@ def edit_case(case_id, case_data):
 
     except IntegrityError:
         db.session.rollback()
-        return {"error": "Database error"}, 500   
+        return {"error": "Database error"}, 500  
     
+    
+def delete_case(case_id):
+    case = db.session.get(Case, case_id)
+    if case is None:
+        return jsonify({"error": "Case not found"}), 404
+        
+    try:
+        db.session.delete(case)
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return {"error": "Database error"}, 500  
+    return jsonify({"message": "Case deleted"}), 400
 
   
     
