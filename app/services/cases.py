@@ -159,7 +159,7 @@ def delete_case(case_id):
     except IntegrityError:
         db.session.rollback()
         return {"error": "Database error"}, 500  
-    return jsonify({"message": "Case deleted"}), 400
+    return "", 204
 
   
     
