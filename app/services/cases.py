@@ -143,17 +143,27 @@ def edit_case(case_id, case_data, user_id):
 
                 case.assigned_users = users
             if key == "case_stage":
-                stages = ["intake","document_collection","review","edits","pending_submission","submitted","closed"]
-                current_index = stages.index(case.case_stage)
-                new_index = stages.index(value)
 
-                if value not in stages:
+                ALLOWED_STAGE_TRANSITIONS = {
+                    "intake": ["document_collection"],
+                    "document_collection": ["review"],
+                    "review": ["edits"],
+                    "edits": ["pending_submission", "review"],
+                    "pending_submission": ["submitted"],
+                    "submitted": ["closed"],
+                    "closed": [],
+                }
+
+                allowed_next_stages = ALLOWED_STAGE_TRANSITIONS.get(case.case_stage)
+
+
+                if allowed_next_stages is None:
+                    return {"error": "Current case stage is invalid"}, 500
+
+                if value not in ALLOWED_STAGE_TRANSITIONS:
                     return {"error": f"Invalid case_stage: {value}"}, 400
-                
-                if case.case_stage == "closed":
-                    return {"error": "Closed cases cannot change stage"}, 400
 
-                if new_index != current_index + 1:
+                if value not in allowed_next_stages:
                     return {"error": f"Invalid stage transition: {case.case_stage} → {value}"}, 400
                 
                 case.case_stage = value                    
