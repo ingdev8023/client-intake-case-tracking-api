@@ -2,7 +2,7 @@ from app.models.models import db, Case, Client, User
 from flask import jsonify
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import select, and_, or_, text
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 
 
 def add_case(case_data):
@@ -53,7 +53,7 @@ def add_case(case_data):
 
         return {"error": "Database error"}, 500
 
-def get_cases(filters={}):
+def get_cases(filters=None):
     filters = filters or {}
 
     query = select(Case)
@@ -92,23 +92,31 @@ def get_cases(filters={}):
         else:
             conditions.append(column == value)
 
+    conditions.append(Case.is_deleted == False)
 
-    
-    cases = db.session.execute(select(Case)).scalars().all()
+    if conditions:
+        query = query.where(and_(*conditions))
+
+    cases = db.session.execute(query).scalars().all()
     results = [case.serialize() for case in cases]
     return jsonify(results), 200
 
 def get_case(case_id):
     case = db.session.get(Case, case_id)
-    if case is None:
+    if case is None or case.is_deleted:
         return jsonify({"error": "Case not found"}), 404
     return case.serialize(),200
 
-def edit_case(case_id, case_data):
+def edit_case(case_id, case_data, user_id):
     case = db.session.get(Case, case_id)
+    user = db.session.get(User, user_id)
 
-    if case is None:
+    if case is None or case.is_deleted:
         return jsonify({"error": "Case not found"}), 404
+    if user is None:
+        return jsonify({"error": "User not found"}), 404
+    if not user.is_active:
+        return jsonify({"error": "User not active"}), 403
     if not case_data:
         return jsonify({"error": "No data to update"}), 400
     
@@ -136,8 +144,9 @@ def edit_case(case_id, case_data):
                 case.assigned_users = users
 
             else:
-            
+                
                 setattr(case, key, value)
+                case.updated_by = user.user_id
 
             db.session.commit()
 
@@ -148,13 +157,19 @@ def edit_case(case_id, case_data):
         return {"error": "Database error"}, 500  
     
     
-def delete_case(case_id):
+def delete_case(case_id, user_id):
     case = db.session.get(Case, case_id)
+    user = db.session.get(User, user_id)
     if case is None:
         return jsonify({"error": "Case not found"}), 404
-        
+    if user is None:
+        return jsonify({"error": "User not found"}), 404
+    if not user.is_active:
+        return jsonify({"error": "User not active"}), 403
     try:
-        db.session.delete(case)
+        case.is_deleted = True
+        case.deleted_at = datetime.now(timezone.utc)
+        case.deleted_by = user.user_id
         db.session.commit()
     except IntegrityError:
         db.session.rollback()

@@ -19,7 +19,7 @@ class User(db.Model):
     user_email = db.Column(db.String(120), unique=True, nullable=False)
     user_role = db.Column(db.String(50))
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    
+    is_active = db.Column(db.Boolean, default= True)
 
     assigned_cases = db.relationship(
     'Case',
@@ -52,7 +52,10 @@ class Case(db.Model):
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc)
     )
-     
+    updated_by = db.Column(db.Integer, db.ForeignKey("user.user_id"), nullable=True)
+    is_deleted = db.Column(db.Boolean, default = False)
+    deleted_at = db.Column(db.DateTime, nullable=True)
+    deleted_by = db.Column(db.Integer, db.ForeignKey("user.user_id"), nullable=True)     
     
     client_id = db.Column(db.Integer, db.ForeignKey('client.client_id'), nullable= False)
 
@@ -73,7 +76,11 @@ class Case(db.Model):
             "created_at": str(self.created_at),
             "updated_at": str(self.updated_at),
             "assigned_users": [user.serialize() for user in self.assigned_users],
-            "client": self.client.serialize() if self.client else None
+            "client": self.client.serialize() if self.client else None,
+            "is_deleted" : self.is_deleted,
+            "deleted_at": self.deleted_at,
+            "deleted_by": self.deleted_by,
+            "updated_by" : self.updated_by
         }
 
 class Client(db.Model):
