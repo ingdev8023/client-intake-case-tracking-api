@@ -142,9 +142,23 @@ def edit_case(case_id, case_data, user_id):
                     return {"error": "One or more users do not exist"}, 404
 
                 case.assigned_users = users
+            if key == "case_stage":
+                stages = ["intake","document_collection","review","edits","pending_submission","submitted","closed"]
+                current_index = stages.index(case.case_stage)
+                new_index = stages.index(value)
 
-            else:
+                if value not in stages:
+                    return {"error": f"Invalid case_stage: {value}"}, 400
                 
+                if case.case_stage == "closed":
+                    return {"error": "Closed cases cannot change stage"}, 400
+
+                if new_index != current_index + 1:
+                    return {"error": f"Invalid stage transition: {case.case_stage} → {value}"}, 400
+                
+                case.case_stage = value                    
+                
+            else:                
                 setattr(case, key, value)
                 case.updated_by = user.user_id
 
@@ -156,7 +170,11 @@ def edit_case(case_id, case_data, user_id):
         db.session.rollback()
         return {"error": "Database error"}, 500  
     
+def edit_case_stage(new_stage, case_id):
+    case = db.session.get(Case, case_id)
     
+
+
 def delete_case(case_id, user_id):
     case = db.session.get(Case, case_id)
     user = db.session.get(User, user_id)
