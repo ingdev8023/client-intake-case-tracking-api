@@ -1,4 +1,5 @@
 from app.models.models import db, Case, Client, User
+from app.config.constants import ALLOWED_STAGE_TRANSITIONS
 from flask import jsonify
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import select, and_, or_, text
@@ -142,20 +143,8 @@ def edit_case(case_id, case_data, user_id):
                     return {"error": "One or more users do not exist"}, 404
 
                 case.assigned_users = users
-            if key == "case_stage":
-
-                ALLOWED_STAGE_TRANSITIONS = {
-                    "intake": ["document_collection"],
-                    "document_collection": ["review"],
-                    "review": ["edits"],
-                    "edits": ["pending_submission", "review"],
-                    "pending_submission": ["submitted"],
-                    "submitted": ["closed"],
-                    "closed": [],
-                }
-
+            if key == "case_stage":               
                 allowed_next_stages = ALLOWED_STAGE_TRANSITIONS.get(case.case_stage)
-
 
                 if allowed_next_stages is None:
                     return {"error": "Current case stage is invalid"}, 500
