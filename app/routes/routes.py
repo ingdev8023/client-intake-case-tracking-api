@@ -1,5 +1,5 @@
 from flask import Blueprint, request, Response, jsonify
-from app.services.clients import add_client, get_clients, get_client
+from app.services.clients import add_client, get_clients, get_client, update_client
 from app.services.users import add_user, get_users, get_user
 from app.services.cases import add_case, get_cases, get_case, edit_case, delete_case
 
@@ -15,13 +15,18 @@ def clients():
         client_data = request.get_json()
         if not client_data:
             return {"error": "Invalid JSON"}, 400
-
         return add_client(client_data)
     return get_clients()
 
-@routes_blueprint.route("/clients/<int:client_id>")
+@routes_blueprint.route("/clients/<int:client_id>", methods=["PUT", "GET"])
 def retrieve_client(client_id):
+    if request.method == "PUT":
+        client_data= request.get_json()
+        if not client_data:
+            return {"error": "Invalid JSON"}, 400
+        return update_client(client_id,client_data)
     return get_client(client_id)
+
 
 @routes_blueprint.route("/cases", methods=["POST", "GET"])
 def cases():

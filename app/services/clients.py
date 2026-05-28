@@ -65,4 +65,39 @@ def get_client(client_id):
     return client.serialize(),200
     
 
-        
+def update_client(client_id, client_data):
+    client = db.session.get(Client, client_id)
+
+    client = db.session.get(Client, client_id)
+    if client is None:
+        return jsonify({"error": "Client not found"}), 404
+
+    allowed_edits = {
+        "client_first_name",
+        "client_lastname",
+        "client_phone",
+        "client_email",
+        "client_date_of_birth",
+        "client_address"
+    }
+
+    try:
+        for key, value in client_data.items():
+            if key not in allowed_edits:
+                return {"error": f"Invalid field: {key}"}, 400
+            if key == "client_date_of_birth":
+                try:
+                    client.client_date_of_birth = datetime.fromisoformat(value)
+                except ValueError:
+                    return {"error": "Invalid date format. Use YYYY-MM-DD"}, 400
+            else:                
+                setattr(client, key, value)
+                
+            db.session.commit()
+
+        return client.serialize(), 200
+
+    except IntegrityError:
+        db.session.rollback()
+        return {"error": "Database error"}, 500
+           
