@@ -68,7 +68,6 @@ def get_client(client_id):
 def update_client(client_id, client_data):
     client = db.session.get(Client, client_id)
 
-    client = db.session.get(Client, client_id)
     if client is None:
         return jsonify({"error": "Client not found"}), 404
 
