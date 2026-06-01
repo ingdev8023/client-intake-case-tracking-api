@@ -71,6 +71,9 @@ def update_client(client_id, client_data):
     if client is None:
         return jsonify({"error": "Client not found"}), 404
 
+    if not client_data:
+        return {"error": "No data to update"}, 400
+
     allowed_edits = {
         "client_first_name",
         "client_lastname",
@@ -86,17 +89,18 @@ def update_client(client_id, client_data):
                 return {"error": f"Invalid field: {key}"}, 400
             if key == "client_date_of_birth":
                 try:
-                    client.client_date_of_birth = datetime.fromisoformat(value)
+                    value = date.fromisoformat(value)
                 except ValueError:
                     return {"error": "Invalid date format. Use YYYY-MM-DD"}, 400
-            else:                
-                setattr(client, key, value)
+                           
+            setattr(client, key, value)
                 
-            db.session.commit()
+        
+        db.session.commit()
 
         return client.serialize(), 200
 
     except IntegrityError:
         db.session.rollback()
-        return {"error": "Database error"}, 500
+        return {"error": "Email already exists or database constraint failed"}, 400
            

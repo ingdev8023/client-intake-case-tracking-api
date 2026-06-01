@@ -25,7 +25,8 @@ class User(db.Model):
     'Case',
     secondary=users_cases,
     back_populates='assigned_users'
-)
+)   
+    #auditLog = db.relationship('AuditLog', backref='User')
 
     
        
@@ -64,8 +65,9 @@ class Case(db.Model):
     secondary=users_cases,
     back_populates='assigned_cases'
 )
-    tasks = db.relationship('Task', backref='case')
-    notes = db.relationship('Note', backref='case')
+    tasks = db.relationship('Task', backref='Case')
+    notes = db.relationship('Note', backref='Case')
+    #auditlog = db.relationship('AuditLog', backref='Case')
 
     def serialize(self):
         return {
@@ -81,6 +83,32 @@ class Case(db.Model):
             "deleted_at": self.deleted_at,
             "deleted_by": self.deleted_by,
             "updated_by" : self.updated_by
+        }
+
+class AuditLog(db.Model):
+    __tablename__ = 'audit_log'
+
+    log_id = db.Column(db.Integer, primary_key =True)
+    case_id = db.Column(db.Integer,db.ForeignKey("cases.case_id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.user_id"), nullable=False)
+    action = db.Column(db.String(120), unique =False, nullable=False)
+    new_value = db.Column(db.String(120), unique =False, nullable=True)
+    old_value = db.Column(db.String(120), unique =False, nullable=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+    case = db.relationship('Case', backref='audit_log')
+    user = db.relationship('User', backref='audit_log')
+
+    def serialize(self):
+        return {
+            "log_id": self.log_id,
+            "case_id": self.case_id,
+            "user_id": self.user_id,
+            "action": self.action,
+            "new_value": self.new_value,
+            "old_value": self.old_value,
+            "created_at": str(self.created_at)
         }
 
 class Client(db.Model):
