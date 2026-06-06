@@ -16,4 +16,6 @@ AUDIT_ACTIONS = {
     "CASE_ASSIGNED_USERS_CHANGED": "case_assigned_users_changed",
 }
 
-ALLOWED_CASE_TYPE = ["VAWA","CP","AOS"]
+ALLOWED_CASE_TYPES = ["VAWA","CP","AOS","FOIA"]
+
+CASE_USERS_ACTIONS = ["delete", "add"]

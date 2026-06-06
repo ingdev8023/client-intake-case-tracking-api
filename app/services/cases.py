@@ -1,5 +1,5 @@
 from app.models.models import db, Case, Client, User
-from app.config.constants import ALLOWED_STAGE_TRANSITIONS, AUDIT_ACTIONS, ALLOWED_CASE_TYPE
+from app.config.constants import ALLOWED_STAGE_TRANSITIONS, AUDIT_ACTIONS, ALLOWED_CASE_TYPES, CASE_USERS_ACTIONS
 from app.services.audit_log import add_log
 from flask import jsonify
 from sqlalchemy.exc import IntegrityError
@@ -270,10 +270,12 @@ def edit_case_type(new_type, case_id, user_id):
         return jsonify({"error": "User not active"}), 403
     if not new_type:
         return jsonify({"error": "No case type to update"}), 400
+    if case.case_type == new_type:
+        return {"error": "Case type is already set to this value"}, 400
     
     try:  
 
-        if new_type not in ALLOWED_CASE_TYPE:
+        if new_type not in ALLOWED_CASE_TYPES:
                 return {"error": f"Invalid case_type: {new_type}"}, 400
 
       
@@ -293,6 +295,69 @@ def edit_case_type(new_type, case_id, user_id):
 
         db.session.commit()
 
+        return case.serialize(), 200
+
+    except IntegrityError:
+        db.session.rollback()
+        return {"error": "Database error"}, 500
+
+def edit_case_users(case_data, case_id, user_id):
+    case = db.session.get(Case, case_id)
+    acting_user = db.session.get(User, user_id)
+    action = case_data.get("action")
+    user_assigned_ids = case_data.get("user_assigned_ids")
+
+    if case is None or case.is_deleted:
+        return jsonify({"error": "Case not found"}), 404    
+    if acting_user is None:
+        return jsonify({"error": "User not found"}), 404
+    if not acting_user.is_active:
+        return jsonify({"error": "User not active"}), 403
+    if not action:
+        return jsonify({"error":"No action to perform with the users"}), 400
+    if action not in CASE_USERS_ACTIONS:
+        return {"error": "Invalid action. Use 'add' or 'delete'"}, 400
+    if not user_assigned_ids:
+        return jsonify({"error":"No users to update"}), 400
+    if not isinstance(user_assigned_ids, list):
+        return {"error": "assigned_user_ids must be a list"}, 400
+
+    users = User.query.filter(User.user_id.in_(user_assigned_ids), User.is_active.is_(True)).all()
+     
+    if len(users) != len(user_assigned_ids):
+        return {"error": "One or more users do not exist or are inactive"}, 404
+    
+    try:
+        old_user_ids = [assigned_user.user_id for assigned_user in case.assigned_users]
+
+        if action == "add":
+            current_users = set(case.assigned_users)
+            users_to_add = set(users)
+            case.assigned_users = list(current_users | users_to_add)
+
+        if action == "delete":
+            case.assigned_users = [
+                assigned_user
+                for assigned_user in case.assigned_users
+                if assigned_user not in users
+            ]
+
+        new_user_ids = [assigned_user.user_id for assigned_user in case.assigned_users]
+
+        if sorted(old_user_ids) == sorted(new_user_ids):
+            return {"error": "Assigned users did not change"}, 400
+
+        add_log({
+            "case_id": case.case_id,
+            "user_id": acting_user.user_id,
+            "action": AUDIT_ACTIONS["CASE_ASSIGNED_USERS_CHANGED"],
+            "old_value": str(old_user_ids),
+            "new_value": str(new_user_ids),
+        })
+
+        case.updated_by = acting_user.user_id
+
+        db.session.commit()
         return case.serialize(), 200
 
     except IntegrityError:
