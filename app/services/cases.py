@@ -364,6 +364,53 @@ def edit_case_users(case_data, case_id, user_id):
         db.session.rollback()
         return {"error": "Database error"}, 500
 
+def edit_case_client(client_id, case_id, user_id):
+    case = db.session.get(Case, case_id)
+    user = db.session.get(User, user_id)
+
+    if not client_id:
+        return jsonify({"error": "No client to update"}), 404
+    
+    client = db.session.get(Client, client_id)
+
+    if case is None or case.is_deleted:
+        return jsonify({"error": "Case not found"}), 404    
+    if user is None:
+        return jsonify({"error": "User not found"}), 404
+    if not user.is_active:
+        return jsonify({"error": "User not active"}), 403
+          
+    if not client:
+        return jsonify({"error": "client does not exist or is inactive"}), 400
+    if client_id == case.client_id:
+        return jsonify({"error":"client already assigned to this case"}), 400
+    
+    try:
+
+          
+        log = {
+            "case_id": case_id,
+            "user_id": user_id,
+            "action": AUDIT_ACTIONS.get("CASE_CLIENT_CHANGED"),
+            "old_value": str(case.client_id),
+            "new_value": str(client_id),
+        }
+
+
+        add_log(log)
+
+        case.client_id = client_id
+        case.updated_by = user.user_id
+
+        db.session.commit()
+
+        return case.serialize(), 200
+
+    except IntegrityError:
+        db.session.rollback()
+        return {"error": "Database error"}, 500
+
+
 def delete_case(case_id, user_id):
     case = db.session.get(Case, case_id)
     user = db.session.get(User, user_id)

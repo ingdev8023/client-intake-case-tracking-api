@@ -12,6 +12,7 @@ AUDIT_ACTIONS = {
     "CASE_STAGE_CHANGED": "case_stage_changed",
     "CASE_STATUS_CHANGED": "case_status_changed",
     "CASE_TYPE_CHANGED": "case_type_changed",
+    "CASE_CLIENT_CHANGED": "case_client_changed",
     "CASE_SOFT_DELETED": "case_soft_deleted",
     "CASE_ASSIGNED_USERS_CHANGED": "case_assigned_users_changed",
 }
