@@ -41,15 +41,10 @@ def cases():
 def retrieve_case(case_id):
     return get_case(case_id)
 
-@routes_blueprint.route("/cases/<int:case_id>/<int:user_id>", methods=["PUT", "DELETE"])
+@routes_blueprint.route("/cases/<int:case_id>/<int:user_id>", methods=["DELETE"])
 def case_edit(case_id, user_id):
-    if request.method == "DELETE":
-        return delete_case(case_id, user_id)
-    case_data = request.get_json()
-    if not case_data:
-        return {"error": "Invalid JSON"}, 400
-    return edit_case(case_id, case_data, user_id)
-
+    return delete_case(case_id, user_id)
+    
 @routes_blueprint.route("/cases/<int:case_id>/<int:user_id>/stage", methods=["PATCH"])
 def case_stage_edit(case_id, user_id):
     case_data = request.get_json()

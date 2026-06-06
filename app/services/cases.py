@@ -109,7 +109,7 @@ def get_case(case_id):
         return jsonify({"error": "Case not found"}), 404
     return case.serialize(),200
 
-def edit_case(case_id, case_data, user_id):
+""" def edit_case(case_id, case_data, user_id):
     case = db.session.get(Case, case_id)
     user = db.session.get(User, user_id)
 
@@ -168,7 +168,7 @@ def edit_case(case_id, case_data, user_id):
 
     except IntegrityError:
         db.session.rollback()
-        return {"error": "Database error"}, 500  
+        return {"error": "Database error"}, 500  """ 
     
 def edit_case_stage(new_stage, case_id, user_id):
     case = db.session.get(Case, case_id)
@@ -409,7 +409,6 @@ def edit_case_client(client_id, case_id, user_id):
     except IntegrityError:
         db.session.rollback()
         return {"error": "Database error"}, 500
-
 
 def delete_case(case_id, user_id):
     case = db.session.get(Case, case_id)
