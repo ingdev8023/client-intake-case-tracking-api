@@ -1,5 +1,5 @@
 from app.models.models import db, Case, Client, User
-from app.config.constants import ALLOWED_STAGE_TRANSITIONS, AUDIT_ACTIONS
+from app.config.constants import ALLOWED_STAGE_TRANSITIONS, AUDIT_ACTIONS, ALLOWED_CASE_TYPE
 from app.services.audit_log import add_log
 from flask import jsonify
 from sqlalchemy.exc import IntegrityError
@@ -177,7 +177,6 @@ def edit_case_stage(new_stage, case_id, user_id):
 
     if case is None or case.is_deleted:
         return jsonify({"error": "Case not found"}), 404
-    
     if user is None:
         return jsonify({"error": "User not found"}), 404
     if not user.is_active:
@@ -220,7 +219,6 @@ def edit_case_stage(new_stage, case_id, user_id):
         db.session.rollback()
         return {"error": "Database error"}, 500  
 
-
 def edit_case_status(new_status, case_id, user_id):
     case = db.session.get(Case, case_id)
     user = db.session.get(User, user_id)
@@ -248,7 +246,49 @@ def edit_case_status(new_status, case_id, user_id):
 
         add_log(log)
 
-        case.case_stage = new_status
+        case.case_status = new_status
+        case.updated_by = user.user_id
+
+        db.session.commit()
+
+        return case.serialize(), 200
+
+    except IntegrityError:
+        db.session.rollback()
+        return {"error": "Database error"}, 500
+
+def edit_case_type(new_type, case_id, user_id):
+    case = db.session.get(Case, case_id)
+    user = db.session.get(User, user_id)
+    
+
+    if case is None or case.is_deleted:
+        return jsonify({"error": "Case not found"}), 404    
+    if user is None:
+        return jsonify({"error": "User not found"}), 404
+    if not user.is_active:
+        return jsonify({"error": "User not active"}), 403
+    if not new_type:
+        return jsonify({"error": "No case type to update"}), 400
+    
+    try:  
+
+        if new_type not in ALLOWED_CASE_TYPE:
+                return {"error": f"Invalid case_type: {new_type}"}, 400
+
+      
+        log = {
+            "case_id": case_id,
+            "user_id": user_id,
+            "action": AUDIT_ACTIONS.get("CASE_TYPE_CHANGED"),
+            "old_value": case.case_type,
+            "new_value": new_type,
+        }
+
+
+        add_log(log)
+
+        case.case_type = new_type
         case.updated_by = user.user_id
 
         db.session.commit()
