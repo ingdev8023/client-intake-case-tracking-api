@@ -385,7 +385,7 @@ def delete_case(case_id, user_id):
             "new_value": True,
         })
 
-        case.updated_by = acting_user.user_id
+        case.updated_by = user.user_id
         db.session.commit()
     except IntegrityError:
         db.session.rollback()
