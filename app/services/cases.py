@@ -377,6 +377,15 @@ def delete_case(case_id, user_id):
         case.is_deleted = True
         case.deleted_at = datetime.now(timezone.utc)
         case.deleted_by = user.user_id
+        add_log({
+            "case_id": case.case_id,
+            "user_id": user.user_id,
+            "action": AUDIT_ACTIONS.get("CASE_SOFT_DELETED"),
+            "old_value": False,
+            "new_value": True,
+        })
+
+        case.updated_by = acting_user.user_id
         db.session.commit()
     except IntegrityError:
         db.session.rollback()
