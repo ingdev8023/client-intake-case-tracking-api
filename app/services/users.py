@@ -39,7 +39,7 @@ def add_user(user_data):
 
 def get_users():
     users = db.session.execute(select(User)).scalars().all()
-    results = [user.serialize() for user in users]
+    results = [user.serialize() for user in users if user.is_active]
     return jsonify(results), 200
     
 
@@ -47,7 +47,33 @@ def get_user(user_id):
     user = db.session.get(User, user_id)
     if user is None:
         return jsonify({"error": "user not found"}), 404
+    if not user.is_active:
+        return jsonify({"error": "User not active"}), 403
     return user.serialize(),200
     
+def deactivate_user(user_id):
+    user = db.session.get(User, user_id)    
+    if user is None:
+        return jsonify({"error": "User not found"}), 404
+    if not user.is_active:
+        return jsonify({"error": "User not active"}), 403
+    try:
+        user.is_active = False
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return {"error": "Database error"}, 500  
+    return "", 204
 
+def reactivate_user(user_id):
+    user = db.session.get(User, user_id)    
+    if user is None:
+        return jsonify({"error": "User not found"}), 404    
+    try:
+        user.is_active = True
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return {"error": "Database error"}, 500  
+    return "", 204
         

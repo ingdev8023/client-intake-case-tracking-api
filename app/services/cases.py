@@ -26,13 +26,10 @@ def add_case(case_data):
         return jsonify({"error": "Client does not exist"}), 404
     
            
-    users = User.query.filter(
-        User.user_id.in_(case_data["assigned_user_ids"])
-    ).all()
+    users = User.query.filter(User.user_id.in_(case_data["assigned_user_ids"]), User.is_active.is_(True)).all()
 
     if len(users) != len(case_data["assigned_user_ids"]):
-        return {"error": "One or more users do not exist"}, 404
-
+        return {"error": "One or more users do not exist or are inactive"}, 404
 
     try:
         case_to_add = Case(

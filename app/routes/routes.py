@@ -1,7 +1,7 @@
 from flask import Blueprint, request, Response, jsonify
 from app.services.clients import add_client, get_clients, get_client, update_client
-from app.services.users import add_user, get_users, get_user
-from app.services.cases import add_case, get_cases, get_case, edit_case, delete_case, edit_case_stage,edit_case_status, edit_case_type, edit_case_users, edit_case_client
+from app.services.users import add_user, get_users, get_user,deactivate_user, reactivate_user
+from app.services.cases import add_case, get_cases, get_case,delete_case, edit_case_stage,edit_case_status, edit_case_type, edit_case_users, edit_case_client
 
 routes_blueprint = Blueprint("routes", __name__)
 
@@ -85,16 +85,19 @@ def users():
     if request.method == "POST":
         user_data = request.get_json()
         if not user_data:
-            return {"error": "Invalid JSON"}, 400
-        
+            return {"error": "Invalid JSON"}, 400        
         return add_user(user_data)
     return get_users()
 
-@routes_blueprint.route("/users/<int:user_id>")
+@routes_blueprint.route("/users/<int:user_id>", methods=["GET", "DELETE"])
 def retrieve_user(user_id):
+    if request.method == "DELETE":
+        return deactivate_user(user_id)
     return get_user(user_id)
     
-    
+@routes_blueprint.route("/users/<int:user_id>/activate", methods=["PATCH"])
+def active_user(user_id):
+    return(reactivate_user(user_id))    
 
 
 

@@ -26,10 +26,7 @@ class User(db.Model):
     secondary=users_cases,
     back_populates='assigned_users'
 )   
-    #auditLog = db.relationship('AuditLog', backref='User')
-
-    
-       
+          
     def serialize(self):
         return {
             "user_id": self.user_id,
