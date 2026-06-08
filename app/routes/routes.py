@@ -97,7 +97,6 @@ def get_user_route(user_id):
 def deactivate_user_route(user_id):
     return deactivate_user(user_id)
 
-
 @routes_blueprint.route("/users/<int:user_id>/activate", methods=["PATCH"])
 def active_user_route(user_id):
     return(activate_user(user_id))    

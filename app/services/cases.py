@@ -3,9 +3,9 @@ from app.config.constants import ALLOWED_STAGE_TRANSITIONS, AUDIT_ACTIONS, ALLOW
 from app.services.audit_log import add_log
 from flask import jsonify
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import select, and_, or_, text
+from sqlalchemy import select, and_, or_, text, func
 from datetime import datetime, date, timezone
-
+from math import ceil
 
 def add_case(case_data):
     required_fields = [
@@ -52,8 +52,24 @@ def add_case(case_data):
 
         return {"error": "Database error"}, 500
 
-def get_cases(filters=None):
+def get_cases(filters=None): 
     filters = filters or {}
+
+
+    try:
+        page = int(filters.pop("page", 1))
+        limit = int(filters.pop("limit", 10))
+
+        if page < 1:
+            return {"error": "page must be greater than 0"}, 400
+
+        if limit < 1:
+           return {"error": "limit must be greater than 0"}, 400
+
+        if limit > 100:
+            return {"error": "limit cannot exceed 100"}, 400
+    except ValueError:
+        return {"error": "page and limit must be integers"}, 400
 
     query = select(Case)
 
@@ -91,14 +107,34 @@ def get_cases(filters=None):
         else:
             conditions.append(column == value)
 
-    conditions.append(Case.is_deleted == False)
+    conditions.append(Case.is_deleted.is_(False))
 
     if conditions:
         query = query.where(and_(*conditions))
 
-    cases = db.session.execute(query).scalars().all()
-    results = [case.serialize() for case in cases]
-    return jsonify(results), 200
+    #pagination
+    
+    count_query = select(func.count()).select_from(Case).where(and_(*conditions))
+    total_items = db.session.scalar(count_query)
+
+    paginated_query = (
+        query
+        .order_by(Case.created_at.desc())
+        .limit(limit)
+        .offset((page - 1) * limit)
+    )
+
+    cases = db.session.scalars(paginated_query).all()
+
+    return jsonify({
+        "items": [case.serialize() for case in cases],
+        "pagination": {
+            "page": page,
+            "limit": limit,
+            "total_items": total_items,
+            "total_pages": ceil(total_items / limit) if limit else 0
+        }
+    }), 200
 
 def get_case(case_id):
     case = db.session.get(Case, case_id)
@@ -410,7 +446,7 @@ def edit_case_client(client_id, case_id, user_id):
 def delete_case(case_id, user_id):
     case = db.session.get(Case, case_id)
     user = db.session.get(User, user_id)
-    if case is None:
+    if case is None or case.is_deleted:
         return jsonify({"error": "Case not found"}), 404
     if user is None:
         return jsonify({"error": "User not found"}), 404
@@ -424,8 +460,8 @@ def delete_case(case_id, user_id):
             "case_id": case.case_id,
             "user_id": user.user_id,
             "action": AUDIT_ACTIONS.get("CASE_SOFT_DELETED"),
-            "old_value": False,
-            "new_value": True,
+            "old_value": "active",
+            "new_value": "deleted",
         })
 
         case.updated_by = user.user_id
