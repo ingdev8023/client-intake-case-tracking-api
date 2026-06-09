@@ -3,6 +3,51 @@ from flask import jsonify
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import select
 from app.extensions.extensions import db, bcrypt
+import re
+
+def validate_password(password):
+    """
+    Validates that a password has:
+    - At least 8 characters
+    - At least 1 uppercase letter
+    - At least 1 lowercase letter
+    - At least 1 special character
+    """
+
+    if not password:
+        return {
+            "is_valid": False,
+            "error": "Password is required"
+        }
+
+    if len(password) < 8:
+        return {
+            "is_valid": False,
+            "error": "Password must be at least 8 characters long"
+        }
+
+    if not re.search(r"[A-Z]", password):
+        return {
+            "is_valid": False,
+            "error": "Password must contain at least one uppercase letter"
+        }
+
+    if not re.search(r"[a-z]", password):
+        return {
+            "is_valid": False,
+            "error": "Password must contain at least one lowercase letter"
+        }
+
+    if not re.search(r"[^A-Za-z0-9]", password):
+        return {
+            "is_valid": False,
+            "error": "Password must contain at least one special character"
+        }
+
+    return {
+        "is_valid": True,
+        "error": None
+    }
 
 def add_user(user_data):
 
@@ -16,6 +61,11 @@ def add_user(user_data):
     for field in required_fields:
         if not user_data.get(field):
             return {"error": f"{field} is required"}, 400
+        
+    password_validation = validate_password(user_data.get("user_password"))
+
+    if not password_validation["is_valid"]:
+        return {"error": password_validation["error"]}
 
     try:
         hashed_password = bcrypt.generate_password_hash(user_data.get("user_password")).decode('utf-8')
