@@ -1,6 +1,7 @@
 from flask import Blueprint, request, Response, jsonify
 from app.services.clients import add_client, get_clients, get_client, update_client
 from app.services.users import add_user, get_users, get_user,deactivate_user, activate_user
+from app.services.audit_log import get_logs
 from app.services.cases import add_case, get_cases, get_case,delete_case, edit_case_stage,edit_case_status, edit_case_type, edit_case_users, edit_case_client
 
 routes_blueprint = Blueprint("routes", __name__)
@@ -101,7 +102,9 @@ def deactivate_user_route(user_id):
 def active_user_route(user_id):
     return(activate_user(user_id))    
 
-
+@routes_blueprint.route("/logs/<int:case_id>")
+def get_logs_route(case_id):
+    return get_logs(case_id)
 
 
     
