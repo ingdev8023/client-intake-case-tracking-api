@@ -4,6 +4,7 @@ from app.services.users import add_user, get_users, get_user,deactivate_user, ac
 from app.services.audit_log import get_logs
 from app.services.cases import add_case, get_cases, get_case,delete_case, edit_case_stage,edit_case_status, edit_case_type, edit_case_users, edit_case_client
 
+
 routes_blueprint = Blueprint("routes", __name__)
 
 @routes_blueprint.route("/health")
@@ -106,6 +107,11 @@ def active_user_route(user_id):
 def get_logs_route(case_id):
     return get_logs(case_id)
 
-
+@routes_blueprint.route("/login")
+def register_user_login_info_route():
+    login_data = request.get_json()
+    if not login_data:
+        return {"error": "Invalid JSON"}, 400
+    return register_user_login_info(login_data)
     
     

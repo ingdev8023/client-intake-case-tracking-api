@@ -14,7 +14,8 @@ with app.app_context():
     user = User(
         user_name="Daniel",
         user_email="daniel@test.com",
-        user_role="admin"
+        user_role="admin",
+        user_password="test"
     )
     db.session.add(user)
 

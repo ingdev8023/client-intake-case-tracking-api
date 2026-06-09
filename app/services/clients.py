@@ -1,8 +1,9 @@
-from app.models.models import db, Client
+from app.models.models import Client
 from flask import jsonify
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import select
 from datetime import datetime, date
+from app.extensions.extensions import db
 
 def add_client(client_data):
 

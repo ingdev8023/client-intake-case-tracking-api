@@ -2,9 +2,7 @@ from flask import Flask
 from datetime import datetime, date, timezone
 from sqlalchemy import ForeignKey, String, Integer
 from sqlalchemy.orm import relationship
-from flask_sqlalchemy import SQLAlchemy
-
-db = SQLAlchemy()
+from app.extensions.extensions import db
 
 users_cases = db.Table('users_cases',
     db.Column('user_id', db.Integer, db.ForeignKey('user.user_id')),
@@ -20,6 +18,7 @@ class User(db.Model):
     user_role = db.Column(db.String(50))
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     is_active = db.Column(db.Boolean, default= True)
+    user_password = db.Column(db.String(250), nullable=False)
 
     assigned_cases = db.relationship(
     'Case',
