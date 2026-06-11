@@ -452,6 +452,8 @@ def delete_case(case_id, user_id):
         return jsonify({"error": "User not found"}), 404
     if not user.is_active:
         return jsonify({"error": "User not active"}), 403
+    if user.user_role != 'admin':
+        return jsonify({"error": "User not authorize for this action"}), 403
     try:
         case.is_deleted = True
         case.deleted_at = datetime.now(timezone.utc)
