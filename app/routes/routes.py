@@ -41,13 +41,14 @@ def retrieve_client(client_id):
 @routes_blueprint.route("/cases", methods=["POST", "GET"])
 @jwt_required()
 def cases():
+    current_user_identity = get_jwt_identity()
     if request.method == "POST":
         case_data = request.get_json()
         if not case_data:
             return {"error": "Invalid JSON"}, 400
         return add_case(case_data)
     
-    return get_cases(request.args.to_dict())
+    return get_cases(request.args.to_dict(), current_user_identity)
 
 """{
     "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTc4MTE0MDc0OCwianRpIjoiZDFjNWQwYzctMTA0OC00MWNjLThkZTAtZDQzZjZmNTM1ODMxIiwidHlwZSI6ImFjY2VzcyIsInN1YiI6IjQiLCJuYmYiOjE3ODExNDA3NDgsImNzcmYiOiI3MjMyODZkYi1jNjEyLTRkNTQtOWI2OS1mNmY0MzlkZTUzNTIiLCJleHAiOjE3ODExNDE2NDh9.ebrGYcH-0ZhcH5f0iXY10xuxkwX0zh4NSKyvEyeUDww",
@@ -65,50 +66,56 @@ def cases():
 def retrieve_case(case_id):
     return get_case(case_id)
 
-@routes_blueprint.route("/cases/<int:case_id>/<int:user_id>", methods=["DELETE"])
+@routes_blueprint.route("/cases/<int:case_id>", methods=["DELETE"])
 @jwt_required()
-def case_edit(case_id, user_id):
-    return delete_case(case_id, user_id)
+def case_edit(case_id):
+    current_user_identity = get_jwt_identity()
+    return delete_case(case_id, current_user_identity)
     
-@routes_blueprint.route("/cases/<int:case_id>/<int:user_id>/stage", methods=["PATCH"])
+@routes_blueprint.route("/cases/<int:case_id>/stage", methods=["PATCH"])
 @jwt_required()
-def case_stage_edit(case_id, user_id):
+def case_stage_edit(case_id):
     case_data = request.get_json()
+    current_user_identity = get_jwt_identity()
     if not case_data:
         return {"error": "Invalid JSON"}, 400
-    return edit_case_stage(case_data.get("case_stage"), case_id,user_id)
+    return edit_case_stage(case_data.get("case_stage"), case_id,current_user_identity)
 
-@routes_blueprint.route("/cases/<int:case_id>/<int:user_id>/status", methods=["PATCH"])
+@routes_blueprint.route("/cases/<int:case_id>/status", methods=["PATCH"])
 @jwt_required()
-def case_status_edit(case_id, user_id):
+def case_status_edit(case_id):
     case_data = request.get_json()
+    current_user_identity = get_jwt_identity()
     if not case_data:
         return {"error": "Invalid JSON"}, 400
-    return edit_case_status(case_data.get("case_status"), case_id,user_id)
+    return edit_case_status(case_data.get("case_status"), case_id,current_user_identity)
 
-@routes_blueprint.route("/cases/<int:case_id>/<int:user_id>/type", methods=["PATCH"])
+@routes_blueprint.route("/cases/<int:case_id>/type", methods=["PATCH"])
 @jwt_required()
-def case_type_edit(case_id, user_id):
+def case_type_edit(case_id):
     case_data = request.get_json()
+    current_user_identity = get_jwt_identity()
     if not case_data:
         return {"error": "Invalid JSON"}, 400
-    return edit_case_type(case_data.get("case_type"), case_id,user_id)
+    return edit_case_type(case_data.get("case_type"), case_id,current_user_identity)
 
-@routes_blueprint.route("/cases/<int:case_id>/<int:user_id>/users", methods=["PATCH"])
+@routes_blueprint.route("/cases/<int:case_id>/users", methods=["PATCH"])
 @jwt_required()
 def case_users_edit(case_id, user_id):
     case_data = request.get_json()
+    current_user_identity = get_jwt_identity()
     if not case_data:
         return {"error": "Invalid JSON"}, 400
-    return edit_case_users(case_data, case_id,user_id)
+    return edit_case_users(case_data, case_id,current_user_identity)
 
-@routes_blueprint.route("/cases/<int:case_id>/<int:user_id>/client", methods=["PATCH"])
+@routes_blueprint.route("/cases/<int:case_id>/client", methods=["PATCH"])
 @jwt_required()
-def case_client_edit(case_id, user_id):
+def case_client_edit(case_id):
     case_data = request.get_json()
+    current_user_identity = get_jwt_identity()
     if not case_data:
         return {"error": "Invalid JSON"}, 400
-    return edit_case_client(case_data.get("client_id"), case_id,user_id)
+    return edit_case_client(case_data.get("client_id"), case_id,current_user_identity)
 
 @routes_blueprint.route("/users", methods=["POST", "GET"])
 @jwt_required()

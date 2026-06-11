@@ -56,8 +56,6 @@ def add_case(case_data):
 
 def get_cases(filters=None): 
     filters = filters or {}
-
-
     try:
         page = int(filters.pop("page", 1))
         limit = int(filters.pop("limit", 10))
