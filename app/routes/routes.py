@@ -1,6 +1,6 @@
 from flask import Blueprint, request, Response, jsonify
 from app.services.clients import add_client, get_clients, get_client, update_client
-from app.services.users import add_user, get_users, get_user,deactivate_user, activate_user
+from app.services.users import add_user, get_users, get_user,deactivate_user, activate_user, login
 from app.services.audit_log import get_logs
 from app.services.cases import add_case, get_cases, get_case,delete_case, edit_case_stage,edit_case_status, edit_case_type, edit_case_users, edit_case_client
 
@@ -10,6 +10,13 @@ routes_blueprint = Blueprint("routes", __name__)
 @routes_blueprint.route("/health")
 def health():
     return {"message": "API running"}
+
+@routes_blueprint.route("/login", methods=["POST"])
+def login_route():
+    user_data = request.get_json()
+    if not user_data:
+        return {"error": "Invalid JSON"}, 400
+    return login(user_data)
 
 @routes_blueprint.route("/clients", methods=["POST", "GET"])
 def clients():

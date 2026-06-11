@@ -2,8 +2,9 @@ from app.models.models import User
 from flask import jsonify
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import select
-from app.extensions.extensions import db, bcrypt
+from app.extensions.extensions import db, bcrypt, jwt_required, JWTManager,get_jwt_identity, create_access_token
 import re
+
 
 def validate_password(password):
     """
@@ -131,4 +132,45 @@ def activate_user(user_id):
         db.session.rollback()
         return {"error": "Database error"}, 500  
     return user.serialize(), 200
-        
+
+def login(user_data):
+    user_email = user_data.get("user_email")
+    user_password = user_data.get("user_password")
+
+    if not user_email:
+            return {"error": "user email is required"}, 400
+    
+    if not user_password:
+            return {"error": "user password is required"}, 400
+
+    user = db.session.execute(select(User).where(User.user_email == user_email)).scalar_one_or_none()
+
+    if user is None:
+        return jsonify({"msg": "Bad username or password"}), 401
+
+    if not user.is_active:
+        return jsonify({"msg": "User is inactive"}), 403
+    
+    check_pass = bcrypt.check_password_hash(user.user_password,user_password)
+
+    if not check_pass:
+        return jsonify({"msg": "Wrong password"}), 401
+    
+    access_token = create_access_token(identity=str(user.user_id))
+
+    return jsonify({
+        "access_token": access_token,
+        "user": user.serialize()
+    }), 200
+
+
+    
+
+"""
+{
+    "user_email": "test3@test.com",
+    "user_name": "Daniel",
+    "user_role": "test2role",
+    "user_password":"Test2345!"
+  }
+"""
