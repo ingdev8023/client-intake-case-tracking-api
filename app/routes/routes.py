@@ -3,7 +3,7 @@ from app.services.clients import add_client, get_clients, get_client, update_cli
 from app.services.users import add_user, get_users, get_user,deactivate_user, activate_user, login
 from app.services.audit_log import get_logs
 from app.services.cases import add_case, get_cases, get_case,delete_case, edit_case_stage,edit_case_status, edit_case_type, edit_case_users, edit_case_client
-
+from app.extensions.extensions import db, bcrypt, jwt_required, JWTManager,get_jwt_identity
 
 routes_blueprint = Blueprint("routes", __name__)
 
@@ -37,6 +37,7 @@ def retrieve_client(client_id):
     return get_client(client_id)
 
 @routes_blueprint.route("/cases", methods=["POST", "GET"])
+@jwt_required()
 def cases():
     if request.method == "POST":
         case_data = request.get_json()
@@ -45,6 +46,17 @@ def cases():
         return add_case(case_data)
     
     return get_cases(request.args.to_dict())
+
+"""{
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTc4MTE0MDc0OCwianRpIjoiZDFjNWQwYzctMTA0OC00MWNjLThkZTAtZDQzZjZmNTM1ODMxIiwidHlwZSI6ImFjY2VzcyIsInN1YiI6IjQiLCJuYmYiOjE3ODExNDA3NDgsImNzcmYiOiI3MjMyODZkYi1jNjEyLTRkNTQtOWI2OS1mNmY0MzlkZTUzNTIiLCJleHAiOjE3ODExNDE2NDh9.ebrGYcH-0ZhcH5f0iXY10xuxkwX0zh4NSKyvEyeUDww",
+    "user": {
+        "created_at": "2026-06-11 00:33:44.658581",
+        "user_email": "test3@test.com",
+        "user_id": 4,
+        "user_name": "Daniel",
+        "user_role": "test2role"
+    }
+}"""
 
 @routes_blueprint.route("/cases/<int:case_id>")
 def retrieve_case(case_id):

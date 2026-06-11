@@ -2,6 +2,7 @@ from app.models.models import Case, Client, User
 from app.extensions.extensions import db
 from app.config.constants import ALLOWED_STAGE_TRANSITIONS, AUDIT_ACTIONS, ALLOWED_CASE_TYPES, CASE_USERS_ACTIONS
 from app.services.audit_log import add_log
+from app.extensions.extensions import db, bcrypt, jwt_required, JWTManager,get_jwt_identity
 from flask import jsonify
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import select, and_, or_, text, func

@@ -163,9 +163,6 @@ def login(user_data):
         "user": user.serialize()
     }), 200
 
-
-    
-
 """
 {
     "user_email": "test3@test.com",
