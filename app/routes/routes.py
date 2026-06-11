@@ -40,15 +40,14 @@ def retrieve_client(client_id):
 
 @routes_blueprint.route("/cases", methods=["POST", "GET"])
 @jwt_required()
-def cases():
-    current_user_identity = get_jwt_identity()
+def cases():    
     if request.method == "POST":
         case_data = request.get_json()
         if not case_data:
             return {"error": "Invalid JSON"}, 400
         return add_case(case_data)
     
-    return get_cases(request.args.to_dict(), current_user_identity)
+    return get_cases(request.args.to_dict())
 
 """{
     "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTc4MTE0MDc0OCwianRpIjoiZDFjNWQwYzctMTA0OC00MWNjLThkZTAtZDQzZjZmNTM1ODMxIiwidHlwZSI6ImFjY2VzcyIsInN1YiI6IjQiLCJuYmYiOjE3ODExNDA3NDgsImNzcmYiOiI3MjMyODZkYi1jNjEyLTRkNTQtOWI2OS1mNmY0MzlkZTUzNTIiLCJleHAiOjE3ODExNDE2NDh9.ebrGYcH-0ZhcH5f0iXY10xuxkwX0zh4NSKyvEyeUDww",
