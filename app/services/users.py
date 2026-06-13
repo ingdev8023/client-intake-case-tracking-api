@@ -207,6 +207,17 @@ def login(user_data):
         "user": user.serialize()
     }), 200
 
+def get_current_user(current_user_id):
+    user = db.session.get(User, int(current_user_id))
+
+    if user is None:
+        return {"error": "User not found"}, 404
+
+    if not user.is_active:
+        return {"error": "User not active"}, 403
+
+    return user.serialize(), 200
+
 """
 {
     "user_email": "test3@test.com",

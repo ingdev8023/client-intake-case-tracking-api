@@ -1,6 +1,6 @@
 from flask import Blueprint, request, Response, jsonify
 from app.services.clients import add_client, get_clients, get_client, update_client
-from app.services.users import add_user, get_users, get_user,deactivate_user, activate_user, login
+from app.services.users import add_user, get_users, get_user,deactivate_user, activate_user, login, get_current_user
 from app.services.audit_log import get_logs
 from app.services.cases import add_case, get_cases, get_case,delete_case, edit_case_stage,edit_case_status, edit_case_type, edit_case_users, edit_case_client
 from app.extensions.extensions import db, bcrypt, jwt_required, JWTManager,get_jwt_identity
@@ -149,5 +149,10 @@ def active_user_route(user_id):
 @jwt_required()
 def get_logs_route(case_id):
     return get_logs(case_id)
-    
+
+@routes_blueprint.route("/auth/me")
+@jwt_required()
+def get_current_user_route():
+    current_user_id = get_jwt_identity()
+    return get_current_user(current_user_id)
     

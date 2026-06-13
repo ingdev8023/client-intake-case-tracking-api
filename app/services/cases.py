@@ -1,6 +1,6 @@
 from app.models.models import Case, Client, User
 from app.extensions.extensions import db
-from app.config.constants import ALLOWED_STAGE_TRANSITIONS, AUDIT_ACTIONS, ALLOWED_CASE_TYPES, CASE_USERS_ACTIONS
+from app.config.constants import ALLOWED_STAGE_TRANSITIONS, AUDIT_ACTIONS, ALLOWED_CASE_TYPES, CASE_USERS_ACTIONS, USER_ROLES
 from app.services.audit_log import add_log
 from app.extensions.extensions import db, bcrypt, jwt_required, JWTManager,get_jwt_identity
 from flask import jsonify
@@ -452,8 +452,8 @@ def delete_case(case_id, user_id):
         return jsonify({"error": "User not found"}), 404
     if not user.is_active:
         return jsonify({"error": "User not active"}), 403
-    if user.user_role != 'admin':
-        return jsonify({"error": "User not authorize for this action"}), 403
+    if user.user_role != USER_ROLES["ADMIN"]:
+        return {"error": "User not authorized"}, 403
     try:
         case.is_deleted = True
         case.deleted_at = datetime.now(timezone.utc)
