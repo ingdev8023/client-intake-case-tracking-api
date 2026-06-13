@@ -1,4 +1,5 @@
 from app.models.models import User
+from app.config.constants import USER_ROLES
 from flask import jsonify
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import select
@@ -50,7 +51,14 @@ def validate_password(password):
         "error": None
     }
 
-def add_user(user_data):
+def add_user(user_data, current_user_identity):  
+    current_user = db.session.get(User, current_user_identity)
+    if current_user is None:
+        return jsonify({"error": "Authenticated user not found"}), 404
+    if not current_user.is_active:
+        return jsonify({"error": "User not active"}), 403
+    if current_user.user_role != USER_ROLES["ADMIN"]:
+        return {"error": "User not authorized"}, 403
 
     required_fields = [
     "user_name",
@@ -92,12 +100,34 @@ def add_user(user_data):
 
         return {"error": "Database error"}, 500
 
-def get_users():
-    users = db.session.execute(select(User)).scalars().all()
+def get_users(current_user_identity):
+    current_user = db.session.get(User, current_user_identity)
+    if current_user is None:
+        return jsonify({"error": "Authenticated user not found"}), 404
+    if not current_user.is_active:
+        return jsonify({"error": "User not active"}), 403
+    if current_user.user_role != USER_ROLES["ADMIN"]:
+        return {"error": "User not authorized"}, 403
+    
+    users = (
+        db.session.execute(
+            select(User).where(User.is_active.is_(True))
+        )
+        .scalars()
+        .all()
+    )
     results = [user.serialize() for user in users if user.is_active]
     return jsonify(results), 200
 
-def get_user(user_id):
+def get_user(user_id, current_user_identity):
+    current_user = db.session.get(User, current_user_identity)
+    if current_user is None:
+        return jsonify({"error": "Authenticated user not found"}), 404
+    if not current_user.is_active:
+        return jsonify({"error": "User not active"}), 403
+    if current_user.user_role != USER_ROLES["ADMIN"]:
+        return {"error": "User not authorized"}, 403
+    
     user = db.session.get(User, user_id)
     if user is None:
         return jsonify({"error": "user not found"}), 404
@@ -105,7 +135,14 @@ def get_user(user_id):
         return jsonify({"error": "User not active"}), 403
     return user.serialize(),200
     
-def deactivate_user(user_id):
+def deactivate_user(user_id, current_user_identity):
+    current_user = db.session.get(User, current_user_identity)
+    if current_user is None:
+        return jsonify({"error": "Authenticated user not found"}), 404
+    if not current_user.is_active:
+        return jsonify({"error": "User not active"}), 403
+    if current_user.user_role != USER_ROLES["ADMIN"]:
+        return {"error": "User not authorized"}, 403
     user = db.session.get(User, user_id)    
     if user is None:
         return jsonify({"error": "User not found"}), 404
@@ -119,7 +156,14 @@ def deactivate_user(user_id):
         return {"error": "Database error"}, 500  
     return "", 204
 
-def activate_user(user_id):
+def activate_user(user_id, current_user_identity):
+    current_user = db.session.get(User, current_user_identity)
+    if current_user is None:
+        return jsonify({"error": "Authenticated user not found"}), 404
+    if not current_user.is_active:
+        return jsonify({"error": "User not active"}), 403
+    if current_user.user_role != USER_ROLES["ADMIN"]:
+        return {"error": "User not authorized"}, 403
     user = db.session.get(User, user_id)    
     if user is None:
         return jsonify({"error": "User not found"}), 404
@@ -171,3 +215,10 @@ def login(user_data):
     "user_password":"Test2345!"
   }
 """
+
+{
+    "user_email": "daniel2@test.com",
+    "user_password": "Test2345!",
+    "user_name":"daniel admin",
+    "user_role":"admin"
+}

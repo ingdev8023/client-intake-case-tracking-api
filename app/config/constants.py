@@ -20,3 +20,8 @@ AUDIT_ACTIONS = {
 ALLOWED_CASE_TYPES = ["VAWA","CP","AOS","FOIA"]
 
 CASE_USERS_ACTIONS = ["delete", "add"]
+
+USER_ROLES = {
+    "ADMIN": "admin",
+    "STAFF": "staff",
+}

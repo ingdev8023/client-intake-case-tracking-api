@@ -100,7 +100,7 @@ def case_type_edit(case_id):
 
 @routes_blueprint.route("/cases/<int:case_id>/users", methods=["PATCH"])
 @jwt_required()
-def case_users_edit(case_id, user_id):
+def case_users_edit(case_id):
     case_data = request.get_json()
     current_user_identity = get_jwt_identity()
     if not case_data:
@@ -119,27 +119,31 @@ def case_client_edit(case_id):
 @routes_blueprint.route("/users", methods=["POST", "GET"])
 @jwt_required()
 def users():
+    current_user_identity = get_jwt_identity()
     if request.method == "POST":
         user_data = request.get_json()
         if not user_data:
             return {"error": "Invalid JSON"}, 400        
-        return add_user(user_data)
-    return get_users()
+        return add_user(user_data, current_user_identity)
+    return get_users(current_user_identity)
 
 @routes_blueprint.route("/users/<int:user_id>", methods=["GET"])
 @jwt_required()
 def get_user_route(user_id):
-    return get_user(user_id)
+    current_user_identity = get_jwt_identity()
+    return get_user(user_id, current_user_identity)
 
 @routes_blueprint.route("/users/<int:user_id>/deactivate", methods=["PATCH"])
 @jwt_required()
 def deactivate_user_route(user_id):
-    return deactivate_user(user_id)
+    current_user_identity = get_jwt_identity()
+    return deactivate_user(user_id,current_user_identity)
 
 @routes_blueprint.route("/users/<int:user_id>/activate", methods=["PATCH"])
 @jwt_required()
 def active_user_route(user_id):
-    return(activate_user(user_id))    
+    current_user_identity = get_jwt_identity()
+    return activate_user(user_id, current_user_identity)    
 
 @routes_blueprint.route("/logs/<int:case_id>")
 @jwt_required()
