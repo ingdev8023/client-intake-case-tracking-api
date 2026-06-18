@@ -1,7 +1,8 @@
 import pytest
+from datetime import date
 from app import create_app
 from app.extensions.extensions import db, bcrypt
-from app.models.models import User
+from app.models.models import User, Case, Client
 
 @pytest.fixture()
 def app():
@@ -96,3 +97,33 @@ def admin_token(client, admin_user):
 
     data = response.get_json()
     return data["access_token"]
+
+
+@pytest.fixture()
+def new_client(app):
+    client = Client(
+    client_first_name="John",
+    client_lastname="Doe",
+    client_phone="123456",
+    client_email="john@test.com",
+    client_address="Somewhere",
+    client_date_of_birth=date(1990, 1, 1)
+    )
+
+    db.session.add(client)
+    db.session.commit()
+
+    return client
+
+@pytest.fixture()
+def new_case(app, new_client):
+    case = Case(
+    case_type="VAWA",
+    case_status="open",
+    case_stage="intake",
+    client_id= new_client.client_id
+    )
+    db.session.add(case)
+    db.session.commit()
+
+    return case
