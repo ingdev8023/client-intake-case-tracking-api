@@ -96,15 +96,3 @@ def admin_token(client, admin_user):
 
     data = response.get_json()
     return data["access_token"]
-
-@pytest.fixture()
-def staff_token(client, staff_user):
-    response = client.post("/login", json={
-        "user_email": "staff@test.com",
-        "user_password": "Password123!"
-    })
-
-    assert response.status_code == 200
-
-    data = response.get_json()
-    return data["access_token"]
