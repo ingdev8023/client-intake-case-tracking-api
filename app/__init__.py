@@ -4,7 +4,7 @@ from flask import Flask
 from dotenv import load_dotenv
 
 from app.routes.routes import routes_blueprint
-from app.extensions.extensions import db, bcrypt, jwt
+from app.extensions.extensions import db, bcrypt, jwt, migrate
 
 load_dotenv()
 
@@ -25,6 +25,7 @@ def create_app(test_config=None):
     db.init_app(app)
     bcrypt.init_app(app)
     jwt.init_app(app)
+    migrate.init_app(app, db)
 
     app.register_blueprint(routes_blueprint)
     return app
