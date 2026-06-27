@@ -14,7 +14,8 @@ The project currently includes:
 
 * Flask application factory structure
 * SQLAlchemy models and relationships
-* SQLite development database
+* PostgreSQL development database
+* SQLite test database
 * Flask-Migrate / Alembic migrations
 * JWT authentication
 * Bcrypt password hashing
@@ -338,7 +339,12 @@ Create a `.env` file in the project root.
 Example:
 
 ```env
+# SQLite local development
 DATABASE_URL=sqlite:///app.db
+
+# PostgreSQL local development example
+DATABASE_URL=postgresql://username:password@localhost:5432/client_intake_dev
+
 JWT_SECRET_KEY=your-secret-key
 ```
 
@@ -424,7 +430,7 @@ python run.py
 The API should be available locally at:
 
 ```text
-http://127.0.0.1:5000
+http://127.0.0.1:5001
 ```
 
 ---
@@ -554,8 +560,6 @@ Planned future improvements:
 
 ### Database
 
-* Add PostgreSQL support
-* Add production-ready database configuration
 * Expand migrations as models evolve
 
 ### Product Features

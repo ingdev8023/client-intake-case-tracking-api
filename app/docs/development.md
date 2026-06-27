@@ -556,11 +556,18 @@ git commit -m "Add payment model and migration"
 
 ---
 
-## 20. Current Local Development Notes
+## 20. PostgreSQL Local Development
 
-The project currently uses SQLite for local development.
+The app can run with PostgreSQL by changing `DATABASE_URL`.
 
-PostgreSQL support is planned for a future iteration.
+Example:
+
+env
+DATABASE_URL=postgresql://username:password@localhost:5432/client_intake_dev
+
+
+## 21. Current Local Development Notes
+
 
 Deployment is also planned for a future iteration and will require:
 
