@@ -272,6 +272,195 @@ It should listen only locally:
 
 Later, Nginx will receive public traffic on ports `80` and `443` and forward requests internally to Gunicorn.
 
+## systemd Service for Gunicorn
+
+The API is managed on the Linux server using `systemd`.
+
+Before this step, Gunicorn could run manually with:
+
+```bash
+gunicorn -c gunicorn.conf.py run:app
+```
+
+That confirmed the Flask app could run through Gunicorn, but the process stopped when the SSH session or terminal closed.
+
+To make the API behave like a real server process, a `systemd` service was created.
+
+---
+
+### Service Name
+
+The selected service name is:
+
+```text
+client-intake-api.service
+```
+
+The service file is located at:
+
+```text
+/etc/systemd/system/client-intake-api.service
+```
+
+---
+
+### Service File
+
+Current service configuration:
+
+```ini
+[Unit]
+Description=Client Intake Case Tracking API
+After=network.target
+
+[Service]
+User=djdev
+Group=djdev
+WorkingDirectory=/home/djdev/apps/client-intake-case-tracking-api
+EnvironmentFile=/home/djdev/apps/client-intake-case-tracking-api/.env
+ExecStart=/home/djdev/apps/client-intake-case-tracking-api/.venv/bin/gunicorn -c gunicorn.conf.py run:app
+ExecReload=/bin/kill -s HUP $MAINPID
+Restart=always
+RestartSec=5
+KillMode=mixed
+TimeoutStopSec=5
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+```
+
+---
+
+### Important Configuration Notes
+
+`User=djdev` and `Group=djdev` make the service run as the deployment user instead of root.
+
+`WorkingDirectory` tells systemd where the project lives. This is important because Gunicorn must run from the project root where `run.py`, `gunicorn.conf.py`, and `.env` exist.
+
+`EnvironmentFile` loads environment variables required by the API, such as `DATABASE_URL` and `JWT_SECRET_KEY`.
+
+`ExecStart` starts Gunicorn directly from the project virtual environment. The virtual environment is not activated manually inside systemd. Instead, the service calls the Gunicorn binary directly from:
+
+```text
+/home/djdev/apps/client-intake-case-tracking-api/.venv/bin/gunicorn
+```
+
+`Restart=always` makes systemd restart the service if the API crashes.
+
+`PrivateTmp=true` gives the service a private temporary directory, which is a small security improvement.
+
+---
+
+### Service Management Commands
+
+Reload systemd after editing the service file:
+
+```bash
+sudo systemctl daemon-reload
+```
+
+Start the service:
+
+```bash
+sudo systemctl start client-intake-api.service
+```
+
+Stop the service:
+
+```bash
+sudo systemctl stop client-intake-api.service
+```
+
+Restart the service:
+
+```bash
+sudo systemctl restart client-intake-api.service
+```
+
+Check service status:
+
+```bash
+sudo systemctl status client-intake-api.service
+```
+
+Enable the service to start automatically after reboot:
+
+```bash
+sudo systemctl enable client-intake-api.service
+```
+
+View live logs:
+
+```bash
+sudo journalctl -u client-intake-api.service -f
+```
+
+View recent logs:
+
+```bash
+sudo journalctl -u client-intake-api.service -n 50
+```
+
+---
+
+### Validation
+
+The service was validated with:
+
+```bash
+curl http://127.0.0.1:8000/health
+```
+
+Expected response:
+
+```json
+{"message":"API running"}
+```
+
+Protected route validation:
+
+```bash
+curl http://127.0.0.1:8000/cases
+```
+
+Expected response:
+
+```json
+{"msg":"Missing Authorization Header"}
+```
+
+This confirms:
+
+* systemd starts Gunicorn successfully
+* Gunicorn loads the Flask app through `run:app`
+* The API responds on `127.0.0.1:8000`
+* JWT protection still works through the systemd-managed process
+
+---
+
+### Current Deployment Status
+
+At this stage, the API runs as a managed Linux service.
+
+Completed:
+
+* Gunicorn manual execution
+* systemd service creation
+* environment file loading
+* service start/restart/status validation
+* API health check through systemd-managed Gunicorn
+
+Still pending:
+
+* Nginx reverse proxy
+* HTTPS
+* domain configuration
+* production CORS
+* admin bootstrap command
+* server hardening
+
+
 ---
 
 ## Planned Reverse Proxy
