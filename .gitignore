@@ -1,2 +1,21 @@
-.venv
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+.venv/
+
+# Environment variables
 .env
+
+# SQLite databases
+*.db
+instance/
+
+# Pytest cache
+.pytest_cache/
+
+# OS/editor
+.vscode/
+.DS_Store
