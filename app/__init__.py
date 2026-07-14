@@ -18,7 +18,7 @@ def create_app(test_config=None):
     
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")
-
+    
     if test_config is not None:
         app.config.update(test_config)
     

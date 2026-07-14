@@ -5,7 +5,14 @@ from app.services.audit_log import get_logs
 from app.services.cases import add_case, get_cases, get_case,delete_case, edit_case_stage,edit_case_status, edit_case_type, edit_case_users, edit_case_client
 from app.extensions.extensions import db, bcrypt, jwt_required, JWTManager,get_jwt_identity
 
-routes_blueprint = Blueprint("routes", __name__)
+#test
+import click
+from flask.cli import cli
+from sqlalchemy.exc import IntegrityError
+from app.models.models import User
+
+
+routes_blueprint = Blueprint("admin", __name__)
 
 @routes_blueprint.route("/health")
 def health():
@@ -155,4 +162,43 @@ def get_logs_route(case_id):
 def get_current_user_route():
     current_user_id = get_jwt_identity()
     return get_current_user(current_user_id)
+
+##testing the cli 
+
+@routes_blueprint.cli.command("create_admin")
+@click.argument("admin_name")
+@click.argument("admin_email")
+@click.argument("admin_role")
+@click.argument("admin_password")
+def create_admin(admin_name, admin_email, admin_role, admin_password):
     
+    try:
+        hashed_password = bcrypt.generate_password_hash(admin_password).decode('utf-8')
+
+        user_to_add = User(
+        user_name = admin_name,
+        user_email= admin_email,
+        user_role= admin_role,
+        user_password = hashed_password
+        )
+        
+
+        db.session.add(user_to_add)
+        db.session.commit()
+        
+        return user_to_add.serialize(), 201
+    
+    except IntegrityError as e:
+        db.session.rollback()
+
+        if "UNIQUE constraint failed" in str(e):
+            return {"error": "Email already exists"}, 400
+
+        return {"error": "Database error"}, 500
+
+{
+    "user_email": "daniel1@test.com",
+    "user_password": "Test2345!",
+    "user_name":"daniel admin",
+    "user_role":"admin"
+}
