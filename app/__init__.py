@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 
 from app.routes.routes import routes_blueprint
 from app.extensions.extensions import db, bcrypt, jwt, migrate
+from app.cli import register_cli_commands
 
 load_dotenv()
 
@@ -26,6 +27,6 @@ def create_app(test_config=None):
     bcrypt.init_app(app)
     jwt.init_app(app)
     migrate.init_app(app, db)
-
+    register_cli_commands(app)
     app.register_blueprint(routes_blueprint)
     return app

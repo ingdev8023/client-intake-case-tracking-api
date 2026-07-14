@@ -566,7 +566,14 @@ env
 DATABASE_URL=postgresql://username:password@localhost:5432/client_intake_dev
 
 
-## 21. Current Local Development Notes
+##21 ## Admin Bootstrap
+
+Create the first admin user with:
+
+```bash
+flask create-admin
+
+## 22. Current Local Development Notes
 
 
 Deployment is also planned for a future iteration and will require:
