@@ -620,7 +620,7 @@ Possible frontend deployment options:
 
 If the frontend is hosted on a different domain, the backend will need CORS configuration.
 
-Example future architecture:
+Example architecture:
 
 ```text
 Frontend:
@@ -632,13 +632,16 @@ https://api.client-intake.com
 
 In that case, the Flask API must allow requests from the frontend origin.
 
-Planned future dependency:
-
-```text
-Flask-CORS
-```
-
 CORS should be configured carefully. It should not allow every origin in production unless intentionally required.
+
+## CORS Configuration
+
+The API uses Flask-CORS to allow browser-based frontend applications to call the backend from approved origins.
+
+Allowed origins are controlled with:
+
+```env
+CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 
 ---
 

@@ -4,13 +4,18 @@ from flask import Flask
 from dotenv import load_dotenv
 
 from app.routes.routes import routes_blueprint
-from app.extensions.extensions import db, bcrypt, jwt, migrate
+from app.extensions.extensions import db, bcrypt, jwt, migrate, cors
 from app.cli import register_cli_commands
+
 
 load_dotenv()
 
 def create_app(test_config=None):
     app = Flask(__name__)
+
+    def get_allowed_origins():
+        origins = os.getenv("CORS_ORIGINS", "")
+        return [origin.strip() for origin in origins.split(",") if origin.strip()]
 
     app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
     "DATABASE_URL",
@@ -22,11 +27,31 @@ def create_app(test_config=None):
     
     if test_config is not None:
         app.config.update(test_config)
-    
+
     db.init_app(app)
     bcrypt.init_app(app)
     jwt.init_app(app)
     migrate.init_app(app, db)
+
+    allowed_origins = get_allowed_origins()
+
+    cors.init_app(
+    app,
+    resources={
+        r"/*": {
+            "origins": allowed_origins
+        }
+    },
+    methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
+    supports_credentials=False,
+    )
+
     register_cli_commands(app)
     app.register_blueprint(routes_blueprint)
+
+
+
+
+
     return app
