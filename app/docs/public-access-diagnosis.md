@@ -14,6 +14,22 @@ Flask API
 PostgreSQL
 ```
 
+Cloudflare Tunnel proof-of-concept stack:
+
+```text
+External browser / mobile data
+  ↓
+Cloudflare temporary tunnel URL
+  ↓
+cloudflared running on the home server
+  ↓
+Nginx on the server
+  ↓
+Gunicorn on 127.0.0.1:8000
+  ↓
+Flask API
+```
+
 ---
 
 ## 1. Current Status
@@ -22,17 +38,21 @@ PostgreSQL
 * API works through Gunicorn directly: `Confirmed`
 * API works through Nginx locally: `Confirmed`
 * API works through Nginx on LAN: `Confirmed`
-* Public internet access: `Not available yet`
+* Public internet access through direct public IP: `Failed`
+* Public internet access through Cloudflare Tunnel: `Confirmed`
 * Router access: `Login page available, credentials unavailable`
 * Port forwarding control: `Not available`
 * CGNAT status: `Unknown`
 * HTTPS/domain configured: `No`
+* Temporary trycloudflare tunnel tested: `Confirmed`
+* Production-ready named tunnel: `Pending`
 
 Current conclusion:
 
 ```text
-The backend server is working correctly locally and on the LAN.
-The API is not reachable from the public internet because the router/ISP edge cannot currently be configured.
+The backend server is working correctly locally, on the LAN, and through a temporary Cloudflare Tunnel.
+Direct public IP access is not available because the router/ISP edge cannot currently be configured.
+Cloudflare Tunnel successfully bypasses the router/port-forwarding limitation for proof-of-concept testing.
 ```
 
 ---
@@ -211,7 +231,7 @@ Detected public IP:
 181.78.78.115
 ```
 
-This is the IP used for the external mobile data test.
+This is the IP used for the direct external mobile data test.
 
 ---
 
@@ -338,7 +358,7 @@ The only public-facing service should be Nginx.
 
 ---
 
-## 9. External Access Test
+## 9. Direct External Access Test
 
 Test device:
 
@@ -367,7 +387,7 @@ ERR_CONNECTION_REFUSED
 Conclusion:
 
 ```text
-The API is not currently reachable from the public internet.
+The API is not currently reachable through the direct public IP.
 ```
 
 Important interpretation:
@@ -392,9 +412,120 @@ Server 192.168.101.17
 
 ---
 
-## 10. Findings
+## 10. Public Tunnel Validation
 
-The API works locally and over the LAN.
+Cloudflare Tunnel was tested as an alternative public access method because normal router port forwarding is currently blocked by unavailable ISP router credentials.
+
+Tunnel type:
+
+```text
+Temporary trycloudflare tunnel
+```
+
+Temporary public tunnel URL:
+
+```text
+https://router-nav-manner-duck.trycloudflare.com
+```
+
+### Health check validation
+
+Health check test URL:
+
+```text
+https://router-nav-manner-duck.trycloudflare.com/health
+```
+
+Result:
+
+```text
+Success
+```
+
+Response:
+
+```json
+{"message":"API running"}
+```
+
+Conclusion:
+
+```text
+The public health endpoint is reachable through Cloudflare Tunnel.
+```
+
+### Protected route validation
+
+Protected route test URL:
+
+```text
+https://router-nav-manner-duck.trycloudflare.com/cases
+```
+
+Result:
+
+```text
+Success
+```
+
+Response:
+
+```json
+{"msg":"Missing Authorization Header"}
+```
+
+Conclusion:
+
+```text
+The API is publicly reachable through Cloudflare Tunnel, but protected routes still require JWT authentication.
+```
+
+Confirmed working public tunnel path:
+
+```text
+External browser / mobile data
+  ↓
+Cloudflare temporary tunnel URL
+  ↓
+cloudflared running on the home server
+  ↓
+Nginx on the server
+  ↓
+Gunicorn on 127.0.0.1:8000
+  ↓
+Flask API
+```
+
+Security validation:
+
+```text
+Router port forwarding was not required.
+Router admin credentials were not required.
+Gunicorn was not exposed directly.
+PostgreSQL was not exposed.
+SSH was not exposed.
+Protected routes still require JWT authentication.
+```
+
+Important note:
+
+```text
+The current trycloudflare.com URL is temporary and should only be used for proof-of-concept testing.
+A named Cloudflare Tunnel with a permanent hostname should be configured before considering this production-ready.
+```
+
+Current status:
+
+```text
+Cloudflare Tunnel proof-of-concept: Successful
+Production-ready tunnel: Pending
+```
+
+---
+
+## 11. Findings
+
+The API works locally, over the LAN, and through a temporary Cloudflare Tunnel.
 
 Confirmed working layers:
 
@@ -404,6 +535,8 @@ Gunicorn
 systemd service
 Nginx reverse proxy
 LAN access
+Temporary Cloudflare Tunnel public access
+JWT protection on public protected route
 ```
 
 Not confirmed or unavailable:
@@ -412,25 +545,33 @@ Not confirmed or unavailable:
 Router WAN IP
 Router admin access
 Port forwarding
-Public internet access
+Direct public IP access
 CGNAT status
+Permanent Cloudflare Tunnel hostname
+cloudflared systemd service persistence
 ```
 
 Main finding:
 
 ```text
-The issue is outside the Flask/Nginx/Gunicorn server stack and is located at the router/ISP network edge.
+The application stack is healthy. The direct public-IP path is blocked at the router/ISP network edge, but Cloudflare Tunnel successfully provides an alternative public access path without router port forwarding.
 ```
 
-Current blocker:
+Current blocker for direct public access:
 
 ```text
 The ISP-provided router/ONU requires credentials that are not available to the user.
 ```
 
+Current blocker for production-ready tunnel:
+
+```text
+The current tunnel uses a temporary trycloudflare.com URL. A named tunnel with a permanent hostname has not been configured yet.
+```
+
 ---
 
-## 11. Possible Next Paths
+## 12. Possible Next Paths
 
 ### Option A: Contact ISP
 
@@ -495,6 +636,7 @@ Potential tradeoffs:
 Adds Cloudflare dependency
 Requires Cloudflare account and tunnel configuration
 Requires careful access/security configuration
+Temporary trycloudflare URLs are not production-ready
 ```
 
 ---
@@ -593,37 +735,39 @@ Less hands-on home server infrastructure learning.
 
 ---
 
-## 12. Recommended Next Action
+## 13. Recommended Next Action
 
 Recommended path:
 
 ```text
-Evaluate Cloudflare Tunnel for public API access.
+Configure a named Cloudflare Tunnel with a permanent hostname.
 ```
 
 Reason:
 
 ```text
+The temporary Cloudflare Tunnel proof-of-concept was successful.
 The API server is already working locally and on LAN.
 The blocker is router/ISP access.
 Cloudflare Tunnel can expose the service without requiring router port forwarding.
+A permanent hostname is needed before this can be considered stable or production-ready.
 ```
 
 Next issue recommendation:
 
 ```text
-Evaluate Cloudflare Tunnel for public API access
+Configure named Cloudflare Tunnel with permanent hostname
 ```
 
 Suggested objective:
 
 ```text
-Research and test whether Cloudflare Tunnel can expose the Flask API from the home server without requiring router port forwarding.
+Move from a temporary trycloudflare.com tunnel URL to a named Cloudflare Tunnel with a stable public hostname, then run cloudflared as a service and validate reboot persistence.
 ```
 
 ---
 
-## 13. Current Decision
+## 14. Current Decision
 
 Normal router port forwarding path:
 
@@ -637,15 +781,27 @@ Reason:
 Router credentials are unavailable.
 ```
 
-Public access path selected for future evaluation:
+Public access proof-of-concept path:
 
 ```text
-Cloudflare Tunnel
+Temporary Cloudflare Tunnel
+```
+
+Result:
+
+```text
+Successful
+```
+
+Public access path selected for next evaluation:
+
+```text
+Named Cloudflare Tunnel with permanent hostname
 ```
 
 ---
 
-## 14. Security Notes
+## 15. Security Notes
 
 Do not expose Gunicorn directly.
 
@@ -674,28 +830,54 @@ Only Nginx should be public-facing:
 443
 ```
 
-Before any public exposure, confirm:
+Cloudflare Tunnel should route to Nginx:
+
+```text
+http://127.0.0.1:80
+```
+
+Before any stable public exposure, confirm:
 
 * UFW is active
 * Nginx is the only public-facing service
 * Gunicorn is private
 * PostgreSQL is private
+* SSH is not publicly exposed
 * JWT secret is strong
 * CORS origins are restricted
 * `.env` is not committed
 * `.env` permissions are restricted
+* tunnel credentials are not committed
 * backups are planned
 * logs are reviewed
 
 ---
 
-## 15. Final Summary
+## 16. Final Summary
 
 The public access diagnosis was successful.
 
-It confirmed that the backend server is healthy and reachable inside the LAN, but not publicly reachable from the internet.
+It confirmed that the backend server is healthy and reachable:
 
-The blocker is not the application stack.
+```text
+Locally on the server
+Across the LAN
+Through a temporary Cloudflare Tunnel
+```
+
+It also confirmed that direct public-IP access does not currently work:
+
+```text
+http://181.78.78.115/health
+```
+
+Result:
+
+```text
+ERR_CONNECTION_REFUSED
+```
+
+The direct public-IP blocker is not the application stack.
 
 The blocker is the ISP/router edge:
 
@@ -705,8 +887,28 @@ No port forwarding access
 Unknown CGNAT status
 ```
 
+Cloudflare Tunnel proof-of-concept result:
+
+```text
+Successful
+```
+
+Validated public tunnel endpoints:
+
+```text
+https://router-nav-manner-duck.trycloudflare.com/health
+https://router-nav-manner-duck.trycloudflare.com/cases
+```
+
+Security confirmation:
+
+```text
+/health is publicly reachable.
+/cases remains protected by JWT and returns "Missing Authorization Header" without a token.
+```
+
 Recommended next step:
 
 ```text
-Evaluate Cloudflare Tunnel as the public access strategy.
+Configure a named Cloudflare Tunnel with a permanent hostname.
 ```
