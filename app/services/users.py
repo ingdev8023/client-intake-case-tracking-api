@@ -217,19 +217,3 @@ def get_current_user(current_user_id):
         return {"error": "User not active"}, 403
 
     return user.serialize(), 200
-
-"""
-{
-    "user_email": "test3@test.com",
-    "user_name": "Daniel",
-    "user_role": "test2role",
-    "user_password":"Test2345!"
-  }
-"""
-
-{
-    "user_email": "daniel2@test.com",
-    "user_password": "Test2345!",
-    "user_name":"daniel admin",
-    "user_role":"admin"
-}

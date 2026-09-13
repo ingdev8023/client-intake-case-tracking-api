@@ -49,17 +49,6 @@ def cases():
     
     return get_cases(request.args.to_dict())
 
-"""{
-    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTc4MTE0MDc0OCwianRpIjoiZDFjNWQwYzctMTA0OC00MWNjLThkZTAtZDQzZjZmNTM1ODMxIiwidHlwZSI6ImFjY2VzcyIsInN1YiI6IjQiLCJuYmYiOjE3ODExNDA3NDgsImNzcmYiOiI3MjMyODZkYi1jNjEyLTRkNTQtOWI2OS1mNmY0MzlkZTUzNTIiLCJleHAiOjE3ODExNDE2NDh9.ebrGYcH-0ZhcH5f0iXY10xuxkwX0zh4NSKyvEyeUDww",
-    "user": {
-        "created_at": "2026-06-11 00:33:44.658581",
-        "user_email": "test3@test.com",
-        "user_id": 4,
-        "user_name": "Daniel",
-        "user_role": "test2role"
-    }
-}"""
-
 @routes_blueprint.route("/cases/<int:case_id>")
 @jwt_required()
 def retrieve_case(case_id):
