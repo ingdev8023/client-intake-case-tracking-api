@@ -1,7 +1,7 @@
 import pytest
 from datetime import date
 from app import create_app
-from app.extensions.extensions import db, bcrypt
+from app.extensions.extensions import db, bcrypt, create_access_token
 from app.models.models import User, Case, Client
 
 @pytest.fixture()
@@ -85,6 +85,11 @@ def inactive_user(app):
     db.session.commit()
 
     return user
+
+@pytest.fixture()
+def inactive_token(app, inactive_user):
+    with app.app_context():
+        return create_access_token(identity=str(inactive_user.user_id))
 
 @pytest.fixture()
 def admin_token(client, admin_user):

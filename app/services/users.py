@@ -143,6 +143,8 @@ def deactivate_user(user_id, current_user_identity):
         return jsonify({"error": "User not active"}), 403
     if current_user.user_role != USER_ROLES["ADMIN"]:
         return {"error": "User not authorized"}, 403
+    if str(current_user_identity) == str(user_id):
+        return {"error": "Admin users cannot deactivate their own account"}, 400
     user = db.session.get(User, user_id)    
     if user is None:
         return jsonify({"error": "User not found"}), 404
