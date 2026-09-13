@@ -291,3 +291,27 @@ InsecureKeyLengthWarning for the test JWT secret
 ```
 
 The warning comes from the short test secret configured in `tests/conftest.py`; production and deployed environments should use a strong `JWT_SECRET_KEY`.
+
+## Current Authorization Decisions
+
+- Public endpoints are limited to `/health` and `/login`.
+- All client, case, user, and log endpoints require an active authenticated user unless explicitly marked admin-only.
+- User management is admin-only.
+- Case soft delete is admin-only.
+- Case workflow updates are allowed for active authenticated users.
+- Audit logs are currently visible to active authenticated users.
+- Case/client access is currently not assignment-scoped.
+- Current admin self-deactivation is blocked.
+
+## Accepted MVP Tradeoffs
+
+The current authorization model is intentionally simple for the MVP.
+
+Accepted for now:
+
+- Any active staff user can view and update any non-deleted case.
+- Any active staff user can view and update clients.
+- Audit logs are visible to all active authenticated users.
+- JWT access tokens are stateless and do not currently support individual token revocation.
+
+These decisions should be revisited before handling real client data or multi-team production usage.
