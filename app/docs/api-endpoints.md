@@ -291,7 +291,7 @@ GET /users/<user_id>
 ### Headers
 
 ```http
-Authorization: Bearer <access_token>
+Authorization: Bearer <admin_token>
 ```
 
 ### Successful Response
@@ -1286,7 +1286,7 @@ A frontend should:
 Example frontend request:
 
 ```javascript
-fetch("http://127.0.0.1:5000/cases", {
+fetch("http://127.0.0.1:5001/cases", {
   method: "GET",
   headers: {
     "Authorization": `Bearer ${token}`,
@@ -1306,6 +1306,3 @@ This API documentation reflects the current backend implementation and is intend
 * Future automated testing
 * Portfolio review
 * Developer onboarding
-
-
-#changing something to test the conexion with github

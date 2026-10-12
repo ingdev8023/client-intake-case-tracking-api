@@ -170,7 +170,7 @@ python run.py
 The API should be available at:
 
 ```text
-http://127.0.0.1:5000
+http://127.0.0.1:5001
 ```
 
 ---
@@ -325,16 +325,32 @@ admin
 staff
 ```
 
-Admin users can perform restricted actions such as:
+## Authorization
 
-* Create users
+The API protects routes using JWT and role checks.
+
+### Admin permissions
+
+Admin users can:
+
 * View users
+* Create users
 * Activate users
 * Deactivate users
 * Soft delete cases
+* Access protected system operations
 
-Staff users can perform regular case workflow actions but cannot perform admin-only actions.
+### Staff permissions
 
+Staff users can:
+
+* View protected resources
+* Update case workflow fields
+* Update case status
+* Update assigned users
+* Trigger audit-logged case actions
+
+Staff users cannot perform admin-only actions such as soft deleting cases.
 ---
 
 ## 15. Project Structure
@@ -563,7 +579,7 @@ The app can run with PostgreSQL by changing `DATABASE_URL`.
 Example:
 
 env
-DATABASE_URL=postgresql://username:password@localhost:5432/client_intake_dev
+DATABASE_URL=postgresql://username:password@localhost:6436/client_intake_dev
 
 
 ##21 ## Admin Bootstrap
