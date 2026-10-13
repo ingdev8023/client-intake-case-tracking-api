@@ -223,6 +223,10 @@ client-intake-case-tracking-api/
 └── README.md
 ```
 
+## Architecture document
+
+Read the [architecture document](docs/architecture/system-architecture.md) for more information
+
 ---
 
 ## Current Backend Strengths
