@@ -225,11 +225,11 @@ client-intake-case-tracking-api/
 
 ## Architecture document
 
-Read the [architecture document](docs/architecture/system-architecture.md) for more 
+Read the [architecture document](app/docs/architecture/system-architecture.md) for more 
 
 ## ADR README
 
-Read the [ADR README](docs/adr/README.md) for more information
+Read the [ADR README](app/docs/adr/README.md) for more information
 
 ---
 
