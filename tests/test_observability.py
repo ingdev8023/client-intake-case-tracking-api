@@ -32,7 +32,28 @@ def test_not_real_route_has_request_id(client):
     assert "X-Request-ID" in response.headers
 
     
+def test_request_log_matches_response(client, app, caplog):
+    app.logger.addHandler(caplog.handler)
 
+    try:
+        response = client.get("/health")
+
+        records = [
+            record for record in caplog.records
+            if record.getMessage() == "http_request"
+        ]
+
+        assert len(records) == 1
+
+        record = records[0]
+
+        assert response.status_code == record.status_code
+        assert response.headers["X-Request-ID"] == record.request_id
+        assert record.duration_ms >= 0      
+        
+
+    finally:
+        app.logger.removeHandler(caplog.handler)
     
 
     
