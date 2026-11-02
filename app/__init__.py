@@ -13,12 +13,23 @@ from app.extensions.extensions import db, bcrypt, jwt, migrate, cors
 from app.cli import register_cli_commands
 from app.logging_config import configure_logging
 from app.config.validate_security_config import validate_security_config
-
+from werkzeug.exceptions import HTTPException
 
 load_dotenv()
 
+def handle_exception(e):
+    
+    response = e.get_response()    
+    response.data = json.dumps({
+        "code": e.code,
+        "name": e.name,
+        "description": e.description,
+    })
+    response.content_type = "application/json"
+    return response
+
 def create_app(test_config=None):
-    app = Flask(__name__)
+    app = Flask(__name__)    
     configure_logging(app)
     def get_allowed_origins():
         origins = os.getenv("CORS_ORIGINS", "")
@@ -78,7 +89,7 @@ def create_app(test_config=None):
                 "duration_ms": round(duration_ms, 2),
             },
         )        
-                        
+        app.register_error_handler(500, handle_exception)                
         response.headers["X-Request-ID"] = g.request_id
         return response
 
