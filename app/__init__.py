@@ -23,7 +23,7 @@ def handle_exception(e):
     response.data = json.dumps({
         "code": e.code,
         "name": e.name,
-        "description": e.description,
+        "id": g.request_id,
     })
     response.content_type = "application/json"
     return response
@@ -68,6 +68,8 @@ def create_app(test_config=None):
     supports_credentials=False,
     )
 
+    app.register_error_handler(HTTPException, handle_exception)
+
     @app.before_request
     def request_start():
         g.start_time = perf_counter()
@@ -89,10 +91,11 @@ def create_app(test_config=None):
                 "duration_ms": round(duration_ms, 2),
             },
         )        
-        app.register_error_handler(500, handle_exception)                
+                        
         response.headers["X-Request-ID"] = g.request_id
         return response
-
+    
+    
 
     register_cli_commands(app)
     app.register_blueprint(routes_blueprint)
