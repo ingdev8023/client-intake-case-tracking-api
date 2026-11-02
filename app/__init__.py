@@ -12,6 +12,7 @@ from app.routes.routes import routes_blueprint
 from app.extensions.extensions import db, bcrypt, jwt, migrate, cors
 from app.cli import register_cli_commands
 from app.logging_config import configure_logging
+from app.config.validate_security_config import validate_security_config
 
 
 load_dotenv()
@@ -24,15 +25,18 @@ def create_app(test_config=None):
         return [origin.strip() for origin in origins.split(",") if origin.strip()]
 
     app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
-    "DATABASE_URL",
-    "sqlite:///app.db"
-)
+                "DATABASE_URL",
+                "sqlite:///app.db"
+                )
     
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")
-    
+
     if test_config is not None:
         app.config.update(test_config)
+
+    validate_security_config(app.config["JWT_SECRET_KEY"])
+
 
     db.init_app(app)
     bcrypt.init_app(app)
@@ -57,8 +61,6 @@ def create_app(test_config=None):
     def request_start():
         g.start_time = perf_counter()
         g.request_id = str(uuid.uuid4())
-
-
 
     @app.after_request
     def log_request(response):
