@@ -34,3 +34,25 @@ def test_ready_success(client):
     assert response.status_code == 200
     assert response.is_json
     assert response.headers.get("X-Request-ID")
+
+def test_ready_and_health_endpoint(client, monkeypatch):
+    def simulate_db_failure(*args, **kwargs):
+            raise OperationalError(
+                "SELECT 1",
+                {},
+                Exception("Simulated database outage")
+            )
+    
+        # 2. Replace the real execute method
+    monkeypatch.setattr(
+        db.session,
+        "execute",
+        simulate_db_failure
+        )
+    
+        # 3. Make the HTTP request
+    ready_response = client.get("/ready")
+    health_response = client.get("/health")
+
+    assert ready_response.status_code == 503
+    assert health_response.status_code == 200
