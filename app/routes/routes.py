@@ -1,6 +1,8 @@
 from functools import wraps
 
 from flask import Blueprint, request, Response, jsonify
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 from app.models.models import User
 from app.services.clients import add_client, get_clients, get_client, update_client
 from app.services.users import add_user, get_users, get_user,deactivate_user, activate_user, login, get_current_user
@@ -35,6 +37,15 @@ def active_jwt_required(route_handler):
 @routes_blueprint.route("/health")
 def health():
     return {"message": "API running"}
+
+@routes_blueprint.route("/ready")
+def ready():
+    try:
+        db.session.execute(text("SELECT 1"))
+        return {"message": "db running"}
+    except SQLAlchemyError:
+        db.session.rollback()
+        return {"error": "Service Unavailable "}, 503
 
 @routes_blueprint.route("/login", methods=["POST"])
 def login_route():
