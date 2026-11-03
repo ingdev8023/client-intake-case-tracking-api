@@ -7,18 +7,18 @@ from flask import Flask, g, request
 import logging
 from time import perf_counter
 from dotenv import load_dotenv
-
 from app.routes.routes import routes_blueprint
 from app.extensions.extensions import db, bcrypt, jwt, migrate, cors
 from app.cli import register_cli_commands
 from app.logging_config import configure_logging
 from app.config.validate_security_config import validate_security_config
-
+from app.error_handlers import handle_exception
 
 load_dotenv()
 
+
 def create_app(test_config=None):
-    app = Flask(__name__)
+    app = Flask(__name__)    
     configure_logging(app)
     def get_allowed_origins():
         origins = os.getenv("CORS_ORIGINS", "")
@@ -57,6 +57,8 @@ def create_app(test_config=None):
     supports_credentials=False,
     )
 
+    app.register_error_handler(500, handle_exception)
+
     @app.before_request
     def request_start():
         g.start_time = perf_counter()
@@ -81,7 +83,8 @@ def create_app(test_config=None):
                         
         response.headers["X-Request-ID"] = g.request_id
         return response
-
+    
+    
 
     register_cli_commands(app)
     app.register_blueprint(routes_blueprint)
