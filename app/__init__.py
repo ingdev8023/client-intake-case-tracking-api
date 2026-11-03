@@ -7,25 +7,15 @@ from flask import Flask, g, request
 import logging
 from time import perf_counter
 from dotenv import load_dotenv
-
 from app.routes.routes import routes_blueprint
 from app.extensions.extensions import db, bcrypt, jwt, migrate, cors
 from app.cli import register_cli_commands
 from app.logging_config import configure_logging
 from app.config.validate_security_config import validate_security_config
-from werkzeug.exceptions import HTTPException
+from app.error_handlers import handle_exception
 
 load_dotenv()
 
-def handle_exception(e):
-    
-    response = e.get_response()    
-    response.data = json.dumps({
-        "error": e.name,
-        "request_id": g.request_id,
-    })
-    response.content_type = "application/json"
-    return response
 
 def create_app(test_config=None):
     app = Flask(__name__)    
