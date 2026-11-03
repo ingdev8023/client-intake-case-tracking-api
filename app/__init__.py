@@ -21,9 +21,8 @@ def handle_exception(e):
     
     response = e.get_response()    
     response.data = json.dumps({
-        "code": e.code,
-        "name": e.name,
-        "id": g.request_id,
+        "error": e.name,
+        "request_id": g.request_id,
     })
     response.content_type = "application/json"
     return response
@@ -68,7 +67,7 @@ def create_app(test_config=None):
     supports_credentials=False,
     )
 
-    app.register_error_handler(HTTPException, handle_exception)
+    app.register_error_handler(500, handle_exception)
 
     @app.before_request
     def request_start():
