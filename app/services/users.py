@@ -195,12 +195,12 @@ def login(user_data):
         return jsonify({"msg": "Bad username or password"}), 401
 
     if not user.is_active:
-        return jsonify({"msg": "User is inactive"}), 403
+        return jsonify({"msg": "Bad username or password"}), 401
     
     check_pass = bcrypt.check_password_hash(user.user_password,user_password)
 
     if not check_pass:
-        return jsonify({"msg": "Wrong password"}), 401
+        return jsonify({"msg": "Bad username or password"}), 401
     
     access_token = create_access_token(identity=str(user.user_id))
 

@@ -37,8 +37,8 @@ def test_inactive_token_cannot_access_protected_routes(
         json=json_body,
     )
 
-    assert response.status_code == 403
-    assert response.get_json()["error"] == "User not active"
+    assert response.status_code == 401
+    assert response.get_json()["error"] == "Bad username or password"
 
 
 @pytest.mark.parametrize(

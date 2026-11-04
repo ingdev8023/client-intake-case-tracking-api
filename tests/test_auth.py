@@ -32,7 +32,7 @@ def test_invalid_pass_login(client, staff_user):
     data = response.get_json()
 
     assert response.status_code == 401
-
+    assert response.get_json()["msg"] == "Bad username or password"
 #invalid email test 
 
 def test_invalid_email_login(client, staff_user):
@@ -44,7 +44,7 @@ def test_invalid_email_login(client, staff_user):
     data = response.get_json()
 
     assert response.status_code == 401
-    
+    assert response.get_json()["msg"] == "Bad username or password"
 #missing password test
 
 def test_missing_pass_login(client, staff_user):
@@ -56,7 +56,7 @@ def test_missing_pass_login(client, staff_user):
     data = response.get_json()
 
     assert response.status_code == 400
-
+    assert response.get_json()["error"] == "user password is required"
 #missing email test 
 
 def test_missing_email_login(client, staff_user):
@@ -68,7 +68,7 @@ def test_missing_email_login(client, staff_user):
     data = response.get_json()
 
     assert response.status_code == 400
-
+    assert response.get_json()["error"] == "user email is required"
 
 #inactive user test
 def test_inactive_user_cannot_login(client, inactive_user):
@@ -77,8 +77,9 @@ def test_inactive_user_cannot_login(client, inactive_user):
         "user_password": "Password123!"
     })
 
-    assert response.status_code == 403
-
+    assert response.status_code == 401
+    assert response.get_json()["msg"] == "Bad username or password"
+    
 #return token valid  login test
 def test_admin_can_access_users(client, admin_token):
     response = client.get(
