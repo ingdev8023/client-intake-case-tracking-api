@@ -91,8 +91,8 @@ def register_cli_commands(app):
                 db.session.add_all(cases)
                 db.session.commit()
                 click.echo(f"{len(clients)} clients created successfully")
-                click.echo(f"{len(users)} clients created successfully")
-                click.echo(f"{len(cases)} clients created successfully")
+                click.echo(f"{len(users)} users created successfully")
+                click.echo(f"{len(cases)} cases created successfully")
         except SQLAlchemyError as e:
                 db.session.rollback()
                 raise click.ClickException(
