@@ -1,10 +1,38 @@
 import click
 from sqlalchemy.exc import IntegrityError
-
 from app.extensions.extensions import db, bcrypt
-from app.models.models import User
+from app.models.models import User, Client, Case
 from app.config.constants import USER_ROLES
+from sqlalchemy import text
+from load_tests.synthetic_data import generate_synthetic_clients, generate_synthetic_users, generate_synthetic_cases
 
+# app/cli.py
+
+import click
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
+
+from app.extensions.extensions import db
+
+
+def verify_perf_database():
+    """Refuse to proceed outside the designated performance DB."""
+
+    with db.engine.connect() as connection:
+        user, database = connection.execute(
+            text("SELECT current_user, current_database()")
+        ).one()
+
+    if (
+        user != "client_perf_user"
+        or database != "client_intake_perf"
+    ):
+        raise click.ClickException(
+            "Seeding refused: incorrect database or role."
+        )
+
+    click.echo(f"Verified: {user} @ {database}")
+    
 
 def register_cli_commands(app):
     @app.cli.command("create-admin")
@@ -42,3 +70,42 @@ def register_cli_commands(app):
         except IntegrityError:
             db.session.rollback()
             click.echo("Database error: could not create admin user.")
+
+
+    @app.cli.command("seed-perf")           
+    def seed_perf():
+        verify_perf_database()
+
+        if Client.query.first() or Case.query.first():
+            raise click.ClickException(
+                "Performance database already contains clients or cases."
+            )
+
+        if User.query.filter(
+            User.user_email.like("test_user%@test.test")
+        ).first():
+            raise click.ClickException(
+                "Synthetic users already exist."
+            )
+
+        clients = generate_synthetic_clients()
+        users = generate_synthetic_users()
+        cases = generate_synthetic_cases(clients,users)
+        
+        
+        try:
+                db.session.add_all(clients)
+                db.session.add_all(users)
+                db.session.add_all(cases)
+                db.session.commit()
+                click.echo(f"{len(clients)} clients created successfully")
+                click.echo(f"{len(users)} clients created successfully")
+                click.echo(f"{len(cases)} clients created successfully")
+        except IntegrityError as e:
+                db.session.rollback()
+                raise click.ClickException(
+                "Database integrity error while creating synthetic clients."
+                )
+        
+        
+
