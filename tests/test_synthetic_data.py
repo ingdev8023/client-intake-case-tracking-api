@@ -1,4 +1,7 @@
-from app import create_app
+from sqlalchemy import select, func
+
+from app.extensions.extensions import db
+from app.models.models import Client, User, Case
 
 from load_tests.synthetic_data import (
     generate_synthetic_clients,
@@ -6,12 +9,8 @@ from load_tests.synthetic_data import (
     generate_synthetic_cases,
 )
 
-app = create_app(test_config={
-    "JWT_SECRET_KEY": "x" * 48,
-    "SQLALCHEMY_DATABASE_URI": "sqlite://",
-})
 
-with app.app_context():
+def test_synthetic_data(app):
     clients = generate_synthetic_clients()
     users = generate_synthetic_users()
     cases = generate_synthetic_cases(clients, users)
@@ -20,9 +19,24 @@ with app.app_context():
     assert len(users) == 4
     assert len(cases) == 5
 
-    for case in cases:
-        assert case.client in clients
-        assert len(case.assigned_users) >= 1
-        assert all(user in users for user in case.assigned_users)
+    db.session.add_all(clients)
+    db.session.add_all(users)
+    db.session.add_all(cases)
+    db.session.commit()
 
-    print("Synthetic object generation passed!")
+    assert db.session.scalar(
+        select(func.count()).select_from(Client)
+    ) == 4
+
+    assert db.session.scalar(
+        select(func.count()).select_from(User)
+    ) == 4
+
+    assert db.session.scalar(
+        select(func.count()).select_from(Case)
+    ) == 5
+
+    saved_case = db.session.scalar(select(Case).limit(1))
+
+    assert saved_case.client is not None
+    assert len(saved_case.assigned_users) == 1

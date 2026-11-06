@@ -1,18 +1,10 @@
 import click
-from sqlalchemy.exc import IntegrityError
 from app.extensions.extensions import db, bcrypt
 from app.models.models import User, Client, Case
 from app.config.constants import USER_ROLES
 from sqlalchemy import text
 from load_tests.synthetic_data import generate_synthetic_clients, generate_synthetic_users, generate_synthetic_cases
-
-# app/cli.py
-
-import click
-from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
-
-from app.extensions.extensions import db
 
 
 def verify_perf_database():
@@ -101,7 +93,7 @@ def register_cli_commands(app):
                 click.echo(f"{len(clients)} clients created successfully")
                 click.echo(f"{len(users)} clients created successfully")
                 click.echo(f"{len(cases)} clients created successfully")
-        except IntegrityError as e:
+        except SQLAlchemyError as e:
                 db.session.rollback()
                 raise click.ClickException(
                 "Database integrity error while creating synthetic clients."
