@@ -1,5 +1,8 @@
 from locust import HttpUser, task, between
+import os
 
+PERF_EMAIL = os.environ["PERF_EMAIL"]
+PERF_PASSWORD = os.environ["PERF_PASSWORD"]
 
 class APIUser(HttpUser):
 
@@ -7,7 +10,8 @@ class APIUser(HttpUser):
 
     
     def on_start(self):
-        response = self.client.post("/login", json={"user_email": "xxxxxxxxxx","user_password": "xxxxxxxxxxx"})
+        response = self.client.post("/login", json={"user_email": PERF_EMAIL,
+        "user_password": PERF_PASSWORD})
         response.raise_for_status()
         self.token = response.json()["access_token"]
         
