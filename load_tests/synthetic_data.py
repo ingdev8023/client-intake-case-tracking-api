@@ -4,7 +4,7 @@ from app.extensions.extensions import bcrypt
 from datetime import date, timedelta
 import random
 
-def generate_synthetic_clients():
+def generate_synthetic_clients(count=4):
         clients= []
         dob = 0        
         test_date1, test_date2 = date(1960, 1, 1), date(2005, 12, 31)        
@@ -12,7 +12,7 @@ def generate_synthetic_clients():
         total_days = dates_bet.days 
         rng = random.Random(42) 
     
-        for i in range(1,5):
+        for i in range(1, count + 1):
                 
                         
             randay = rng.randint(0, total_days)
@@ -29,10 +29,10 @@ def generate_synthetic_clients():
                  )
         return clients
 
-def generate_synthetic_users():
+def generate_synthetic_users(count=4):
         users= []
         random_mix = letters + "".join(chars)
-        for i in range(1,5):
+        for i in range(1,count + 1):
             password = [random.choice(random_mix) for _ in range(9)]
             hashed_password = bcrypt.generate_password_hash("".join(password)).decode("utf-8")
             users.append(
@@ -46,11 +46,11 @@ def generate_synthetic_users():
                  
         return users
 
-def generate_synthetic_cases(clients, users):
+def generate_synthetic_cases(clients, users, count= 5):
         cases= []        
         rng = random.Random(43)
 
-        for i in range(5):          
+        for i in range(count):          
            
             case = Case(case_type = rng.choice(ALLOWED_CASE_TYPES),
                      case_status= 'open',

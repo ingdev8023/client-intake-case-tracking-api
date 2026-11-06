@@ -80,9 +80,9 @@ def register_cli_commands(app):
                 "Synthetic users already exist."
             )
 
-        clients = generate_synthetic_clients()
-        users = generate_synthetic_users()
-        cases = generate_synthetic_cases(clients,users)
+        clients = generate_synthetic_clients(count=500)
+        users = generate_synthetic_users(count=100)
+        cases = generate_synthetic_cases(clients,users, count=1000)
         
         
         try:
