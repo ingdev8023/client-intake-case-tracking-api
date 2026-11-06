@@ -4,7 +4,7 @@ from app.models.models import User, Client, Case
 from app.config.constants import USER_ROLES
 from sqlalchemy import text
 from load_tests.synthetic_data import generate_synthetic_clients, generate_synthetic_users, generate_synthetic_cases
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 
 def verify_perf_database():
