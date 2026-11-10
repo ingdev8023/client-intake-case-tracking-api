@@ -1,0 +1,4 @@
+scenario,page,limit,users,duration,start_utc,get_requests,get_failures,average_ms,median_ms,p95_ms,p99_ms,maximum_ms,rps,mean_response_bytes,source_html
+page1-limit10,1,10,10,2 minutes and 59 seconds,2026-11-09T19:59:01Z,841,0,103.25,97,160,280,532.0,4.6764,7590,Locust_2026-11-09-14h59_locustfile.py_http___127.0.0.1_18001.html
+page1-limit100,1,100,10,2 minutes and 59 seconds,2026-11-09T20:08:42Z,670,0,647.63,580,1200,1400,1946.0,3.7235,75069,Locust_2026-11-09-15h08_locustfile.py_http___127.0.0.1_18001.html
+page50-limit10,50,10,10,2 minutes and 59 seconds,2026-11-09T20:17:39Z,834,0,98.75,90,180,270,407.0,4.6337,7585,Locust_2026-11-09-15h17_locustfile.py_http___127.0.0.1_18001.html

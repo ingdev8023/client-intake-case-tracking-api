@@ -1,3 +1,5 @@
+import string
+
 ALLOWED_STAGE_TRANSITIONS = {
                     "intake": ["document_collection"],
                     "document_collection": ["review"],
@@ -25,3 +27,6 @@ USER_ROLES = {
     "ADMIN": "admin",
     "STAFF": "staff",
 }
+
+letters = string.ascii_letters
+chars = ["!","@","#","$","%","^","&","*","(","|",")",".","="]

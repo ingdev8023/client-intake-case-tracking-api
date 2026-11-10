@@ -255,6 +255,11 @@ This project includes several backend concepts used in real systems:
 
 ---
 
+## Performance Engineering
+
+- [Isolated PostgreSQL performance environment](app/docs/performance/performance-environment-m2-02.md)
+- [Pagination benchmark — November 2026](app/docs/performance/pagination-benchmark-2026-11-09.md)
+
 ## Data safety
 
 - The current public/demo environment uses fake/test data only.
