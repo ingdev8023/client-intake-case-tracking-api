@@ -80,6 +80,12 @@ def register_cli_commands(app):
                 "Synthetic users already exist."
             )
 
+        click.confirm(
+        "Seed 500 clients, 100 users and 1,000 cases "
+        "into client_intake_perf?",
+        abort=True,
+        )
+
         clients = generate_synthetic_clients(count=500)
         users = generate_synthetic_users(count=100)
         cases = generate_synthetic_cases(clients,users, count=1000)
