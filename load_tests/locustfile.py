@@ -4,7 +4,7 @@ import os
 PERF_EMAIL = os.environ["PERF_EMAIL"]
 PERF_PASSWORD = os.environ["PERF_PASSWORD"]
 PAGE = int(os.getenv("PERF_PAGE", "1"))
-LIMIT = int(os.getenv("PERF_LIMIT", "10"))
+LIMIT = int(os.getenv("PERF_LIMIT", "100"))
 
 WAIT_MIN = float(os.getenv("PERF_WAIT_MIN", "1"))
 WAIT_MAX = float(os.getenv("PERF_WAIT_MAX", "3"))
