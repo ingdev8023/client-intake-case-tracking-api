@@ -87,5 +87,10 @@ with app.app_context():
 
             print(f"\nPage: {page}, Limit: {limit}")
             print(f"SQL statements: {metrics['query_count']}")
+            print("SQL categories:")
+
+            for category, count in sorted(metrics["by_category"].items()):
+                print(f"  {category}: {count}")
+                
             print(f"SQL execution: {metrics['sql_time_ms']:.2f} ms")
             print(f"Full request: {request_ms:.2f} ms")

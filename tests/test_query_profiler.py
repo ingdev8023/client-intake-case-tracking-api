@@ -16,7 +16,7 @@ def test_measure_sql_counts_queries():
 
             assert metrics["query_count"] == 3
             assert metrics["sql_time_ms"] >= 0
-
+            assert metrics["by_category"] == {"other": 3}
             # Verify that the profiler stopped listening.
             connection.execute(text("SELECT 4"))
 
