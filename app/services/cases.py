@@ -6,6 +6,7 @@ from app.extensions.extensions import db, bcrypt, jwt_required, JWTManager,get_j
 from flask import jsonify
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import select, and_, or_, text, func
+from sqlalchemy.orm import selectinload
 from datetime import datetime, date, timezone
 from math import ceil
 
@@ -118,10 +119,14 @@ def get_cases(filters=None):
     total_items = db.session.scalar(count_query)
 
     paginated_query = (
-        query
-        .order_by(Case.created_at.desc())
-        .limit(limit)
-        .offset((page - 1) * limit)
+    query
+    .order_by(Case.created_at.desc())
+    .limit(limit)
+    .offset((page - 1) * limit)
+    .options(
+        selectinload(Case.client),
+        selectinload(Case.assigned_users),
+        )
     )
 
     cases = db.session.scalars(paginated_query).all()
