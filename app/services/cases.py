@@ -209,30 +209,41 @@ def get_case(case_id):
         return {"error": "Database error"}, 500  """ 
     
 def edit_case_stage(new_stage, case_id, user_id):
-    case = db.session.get(Case, case_id)
-    user = db.session.get(User, user_id)
     
+    user = db.session.get(User, user_id)
+    if user is None:
+            return jsonify({"error": "User not found"}), 404
+    if not user.is_active:
+            return jsonify({"error": "User not active"}), 403
+    if not new_stage:
+            return jsonify({"error": "No stage to update"}), 400
+
+    case = db.session.scalar(
+        select(Case)
+        .where(Case.case_id == case_id)
+        .with_for_update()
+        .execution_options(populate_existing=True)
+    )
 
     if case is None or case.is_deleted:
+        db.session.rollback()
         return jsonify({"error": "Case not found"}), 404
-    if user is None:
-        return jsonify({"error": "User not found"}), 404
-    if not user.is_active:
-        return jsonify({"error": "User not active"}), 403
-    if not new_stage:
-        return jsonify({"error": "No stage to update"}), 400
+    
     
     try:  
 
         allowed_next_stages = ALLOWED_STAGE_TRANSITIONS.get(case.case_stage)
 
         if allowed_next_stages is None:
+                    db.session.rollback()
                     return {"error": "Current case stage is invalid"}, 500
 
         if new_stage not in ALLOWED_STAGE_TRANSITIONS:
+                    db.session.rollback()
                     return {"error": f"Invalid case_stage: {new_stage}"}, 400
 
         if new_stage not in allowed_next_stages:
+                    db.session.rollback()
                     return {"error": f"Invalid stage transition: {case.case_stage} → {new_stage}"}, 400
 
         log = {
