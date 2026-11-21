@@ -196,3 +196,62 @@ def test_assigned_users_update_rejects_inactive_user(
     )
 
     assert logs == []
+
+def test_stage_update_nonexistent_case(client, staff_token):
+    missing_case_id = 999999
+
+    assert db.session.get(Case, missing_case_id) is None
+
+    response = client.patch(
+        f"/cases/{missing_case_id}/stage",
+        headers={"Authorization": f"Bearer {staff_token}"},
+        json={"case_stage": "document_collection"},
+    )
+
+    assert response.status_code == 404
+    assert response.get_json()["error"] == "Case not found"
+
+    logs = db.session.scalars(
+        select(AuditLog).where(
+            AuditLog.case_id == missing_case_id,
+            AuditLog.action == AUDIT_ACTIONS["CASE_STAGE_CHANGED"],
+        )
+    ).all()
+
+    assert logs == []
+
+def test_stage_update_soft_deleted_case(
+    client, admin_token, staff_token, new_case
+):
+    case_id = new_case.case_id
+
+    delete_response = client.delete(
+        f"/cases/{case_id}",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+
+    assert delete_response.status_code == 204
+
+    response = client.patch(
+        f"/cases/{case_id}/stage",
+        headers={"Authorization": f"Bearer {staff_token}"},
+        json={"case_stage": "document_collection"},
+    )
+
+    assert response.status_code == 404
+    assert response.get_json()["error"] == "Case not found"
+
+    db.session.expire_all()
+    stored_case = db.session.get(Case, case_id)
+
+    assert stored_case.is_deleted is True
+    assert stored_case.case_stage == "intake"
+
+    stage_logs = db.session.scalars(
+        select(AuditLog).where(
+            AuditLog.case_id == case_id,
+            AuditLog.action == AUDIT_ACTIONS["CASE_STAGE_CHANGED"],
+        )
+    ).all()
+
+    assert stage_logs == []
