@@ -18,10 +18,9 @@ PORT = "5432"
 
 @contextmanager
 def backup_lock():
-    """Prevent overlapping backup processes on Linux."""
-    if os.name != "posix":
-        raise RuntimeError("Backup locking requires Linux/POSIX")    
-    
+    #if os.name != "posix":
+    #    raise RuntimeError("Backup locking requires Linux/POSIX")
+
     lock_dir = Path.home() / "db-recovery-lab" / "m2-08"
     lock_dir.mkdir(parents=True, exist_ok=True)
     lock_dir.chmod(0o700)
