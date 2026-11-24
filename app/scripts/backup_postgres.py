@@ -9,7 +9,7 @@ from uuid import uuid4
 import hashlib
 import tempfile
 from contextlib import contextmanager
-import fcntl
+
 
 EXPECTED_DB = "client_intake_perf"
 EXPECTED_ROLE = "client_perf_user"
@@ -21,6 +21,7 @@ def backup_lock():
     if os.name != "posix":
         raise RuntimeError("Backup locking requires Linux/POSIX")
 
+    import fcntl
     lock_dir = Path.home() / "db-recovery-lab" / "m2-08"
     lock_dir.mkdir(parents=True, exist_ok=True)
     lock_dir.chmod(0o700)
