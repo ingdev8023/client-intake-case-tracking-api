@@ -69,6 +69,7 @@ def create_backup():
     backup_dir = Path.home() / "db-recovery-lab" / "m2-08"
     old_umask = os.umask(0o077)
     partial_file = None
+    checksum_partial = None
 
     try:
         backup_dir.mkdir(parents=True, exist_ok=True)
@@ -135,26 +136,37 @@ def create_backup():
             ).hexdigest()
 
         # Publish the verified backup.
-        partial_file.rename(final_file)
-
         checksum_file = Path(str(final_file) + ".sha256")
-        checksum_file.write_text(
-            f"{digest}  {final_file.name}\n",
-            encoding="utf-8",
+
+        checksum_partial = backup_dir / (
+    f".{final_file.name}.{uuid4().hex}.sha256"
+)
+
+        checksum_partial.write_text(
+        f"{digest}  {final_file.name}\n",
+        encoding="utf-8",
         )
 
-        print(f"Backup created: {final_file}")
-        print(f"Backup size: {final_file.stat().st_size} bytes")
-        print(f"Checksum file: {checksum_file}")
+# Publish the checksum first.
+        checksum_partial.rename(checksum_file)
 
-        return final_file
+# Publish the dump LAST.
+# Its final filename is our completion marker.
+        try:
+            partial_file.rename(final_file)
+        except BaseException:
+    # If the final rename fails, remove the published checksum.
+            checksum_file.unlink(missing_ok=True)
+            raise
 
     finally:
         if partial_file is not None:
             partial_file.unlink(missing_ok=True)
 
-        os.umask(old_umask)
+        if checksum_partial is not None:
+            checksum_partial.unlink(missing_ok=True)
 
+        os.umask(old_umask)
 
 def main():
     try:
