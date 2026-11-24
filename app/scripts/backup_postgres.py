@@ -8,11 +8,53 @@ from pathlib import Path
 from uuid import uuid4
 import hashlib
 import tempfile
+from contextlib import contextmanager
+import fcntl
 
 EXPECTED_DB = "client_intake_perf"
 EXPECTED_ROLE = "client_perf_user"
 HOST = "127.0.0.1"
 PORT = "5432"
+
+@contextmanager
+def backup_lock():
+    """Prevent overlapping backup processes on Linux."""
+    if os.name != "posix":
+        raise RuntimeError("Backup locking requires Linux/POSIX")    
+    
+    lock_dir = Path.home() / "db-recovery-lab" / "m2-08"
+    lock_dir.mkdir(parents=True, exist_ok=True)
+    lock_dir.chmod(0o700)
+
+    lock_path = lock_dir / "backup.lock"
+
+    fd = os.open(
+        lock_path,
+        os.O_CREAT | os.O_RDWR,
+        0o600,
+    )
+
+    acquired = False
+
+    try:
+        try:
+            fcntl.flock(
+                fd,
+                fcntl.LOCK_EX | fcntl.LOCK_NB,
+            )
+        except BlockingIOError as exc:
+            raise RuntimeError(
+                "Another backup process is already running"
+            ) from exc
+
+        acquired = True
+        yield
+
+    finally:
+        if acquired:
+            fcntl.flock(fd, fcntl.LOCK_UN)
+
+        os.close(fd)
 
 
 def run_command(command):
@@ -172,7 +214,9 @@ def main():
     try:
         verify_environment()
         print("PASS: Backup preflight completed.")
-        create_backup()
+        
+        with backup_lock():
+            create_backup()
 
         print("PASS: Backup created and verified.")
 
