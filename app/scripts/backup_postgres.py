@@ -18,8 +18,8 @@ PORT = "5432"
 
 @contextmanager
 def backup_lock():
-    #if os.name != "posix":
-    #    raise RuntimeError("Backup locking requires Linux/POSIX")
+    if os.name != "posix":
+        raise RuntimeError("Backup locking requires Linux/POSIX")
 
     lock_dir = Path.home() / "db-recovery-lab" / "m2-08"
     lock_dir.mkdir(parents=True, exist_ok=True)
