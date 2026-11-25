@@ -198,3 +198,43 @@ except RuntimeError as exc:
 
     assert after_release.returncode == 0, after_release.stderr
     assert after_release.stdout.strip() == "ACQUIRED"
+
+def test_successful_backup_returns_verified_file(
+    monkeypatch, tmp_path
+):
+    import hashlib
+
+    monkeypatch.setattr(backup.Path, "home", lambda: tmp_path)
+
+    data = b"synthetic PostgreSQL backup test data"
+
+    def fake_run(command, **kwargs):
+        if command[0] == "pg_dump":
+            output = Path(command[command.index("--file") + 1])
+            output.write_bytes(data)
+
+        elif command[0] == "pg_restore":
+            return subprocess.CompletedProcess(
+                command, 0, stdout="TABLE public cases"
+            )
+
+        else:
+            raise AssertionError(command)
+
+        return subprocess.CompletedProcess(command, 0)
+
+    monkeypatch.setattr(backup.subprocess, "run", fake_run)
+
+    result = backup.create_backup()
+
+    assert result is not None
+    assert result.exists()
+    assert result.suffix == ".dump"
+    assert result.read_bytes() == data
+
+    checksum = Path(str(result) + ".sha256")
+
+    assert checksum.exists()
+    assert checksum.read_text().split()[0] == (
+        hashlib.sha256(data).hexdigest()
+    )

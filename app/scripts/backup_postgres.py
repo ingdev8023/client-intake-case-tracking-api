@@ -201,6 +201,12 @@ def create_backup():
             checksum_file.unlink(missing_ok=True)
             raise
 
+        print(f"Backup created: {final_file}")
+        print(f"Backup size: {final_file.stat().st_size} bytes")
+        print(f"Checksum file: {checksum_file}")
+
+        return final_file
+    
     finally:
         if partial_file is not None:
             partial_file.unlink(missing_ok=True)
