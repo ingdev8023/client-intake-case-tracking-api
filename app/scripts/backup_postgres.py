@@ -9,8 +9,9 @@ from uuid import uuid4
 import hashlib
 import tempfile
 from contextlib import contextmanager
+from configparser import ConfigParser, Error as ConfigError
 
-
+BACKUP_REMOTE = "gdrive_crypt:postgresql/m2-08"
 EXPECTED_DB = "client_intake_perf"
 EXPECTED_ROLE = "client_perf_user"
 HOST = "127.0.0.1"
@@ -216,15 +217,124 @@ def create_backup():
 
         os.umask(old_umask)
 
+def verify_crypt_remote():
+    """Verify rclone uses the approved encrypted destination."""
+
+    if shutil.which("rclone") is None:
+        raise RuntimeError("rclone is not installed")
+
+    result = subprocess.run(
+        ["rclone", "config", "show", "gdrive_crypt"],
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=15,
+    )
+
+    config = ConfigParser(interpolation=None)
+
+    try:
+        config.read_string(result.stdout)
+    except ConfigError as exc:
+        raise RuntimeError(
+            "Unable to parse rclone configuration"
+        ) from exc
+
+    if not config.has_section("gdrive_crypt"):
+        raise RuntimeError("Encrypted remote is missing")
+
+    remote = config["gdrive_crypt"]
+
+    if remote.get("type") != "crypt":
+        raise RuntimeError("Remote is not encrypted")
+
+    if remote.get("remote") != (
+        "gdrive_backup:encrypted-postgres-backups"
+    ):
+        raise RuntimeError("Unexpected backup destination")
+
+    if remote.get("filename_encryption", "standard") != "standard":
+        raise RuntimeError("Filename encryption is disabled")
+
+    if remote.get("directory_name_encryption", "true").lower() != "true":
+        raise RuntimeError("Directory encryption is disabled")
+
+    print("PASS: Encrypted rclone configuration verified.")
+
+
+def upload_backup(backup_file):
+    """Upload a verified synthetic backup using encrypted rclone."""
+
+    if os.getenv("RUN_PERF_BACKUP") != "1":
+        raise RuntimeError("Offsite backup not authorized")
+
+    backup_file = Path(backup_file).resolve()
+
+    expected_dir = (
+        Path.home() / "db-recovery-lab" / "m2-08"
+    ).resolve()
+
+    if (
+        backup_file.parent != expected_dir
+        or not backup_file.name.startswith(
+            f"{EXPECTED_DB}_"
+        )
+        or backup_file.suffix != ".dump"
+    ):
+        raise RuntimeError("Unexpected backup file location or name")
+
+    if not backup_file.is_file():
+        raise RuntimeError("Backup file does not exist")
+
+    checksum_file = Path(str(backup_file) + ".sha256")
+
+    if not checksum_file.is_file():
+        raise RuntimeError("Checksum file is missing")
+
+    # Verify the manifest refers to THIS backup.
+    manifest = checksum_file.read_text(
+        encoding="utf-8"
+    ).strip().split(maxsplit=1)
+
+    if len(manifest) != 2 or manifest[1] != backup_file.name:
+        raise RuntimeError("Invalid checksum manifest")
+
+    with backup_file.open("rb") as file:
+        actual_hash = hashlib.file_digest(
+            file, "sha256"
+        ).hexdigest()
+
+    if actual_hash != manifest[0]:
+        raise RuntimeError("Backup checksum mismatch")
+
+    if shutil.which("rclone") is None:
+        raise RuntimeError("rclone is not installed")
+
+    # Upload the archive and manifest through the crypt remote.
+    for file_path in (backup_file, checksum_file):
+        destination = f"{BACKUP_REMOTE}/{file_path.name}"
+
+        subprocess.run(
+            ["rclone", "copyto", str(file_path), destination],
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=300,
+        )
+
+    print("PASS: Encrypted offsite upload completed.")
+
+
 def main():
     try:
         verify_environment()
-        print("PASS: Backup preflight completed.")
-        
-        with backup_lock():
-            create_backup()
 
-        print("PASS: Backup created and verified.")
+        with backup_lock():
+            verify_crypt_remote()
+            backup_file = create_backup()
+            upload_backup(backup_file)
+
+        print("PASS: Local and encrypted offsite backup completed.")
 
     except (
         RuntimeError,
@@ -232,7 +342,7 @@ def main():
         subprocess.TimeoutExpired,
         OSError,
     ) as exc:
-        print(f"Backup failed: {type(exc).__name__}")
+        print(f"Backup workflow failed: {type(exc).__name__}")
         raise SystemExit(1) from None
 
 

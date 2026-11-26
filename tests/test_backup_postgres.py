@@ -3,6 +3,7 @@ from pathlib import Path
 import os
 import sys
 import time
+import hashlib
 
 import pytest
 
@@ -238,3 +239,147 @@ def test_successful_backup_returns_verified_file(
     assert checksum.read_text().split()[0] == (
         hashlib.sha256(data).hexdigest()
     )
+
+
+
+
+def test_upload_rejects_corrupted_backup(monkeypatch, tmp_path):
+    monkeypatch.setenv("RUN_PERF_BACKUP", "1")
+    monkeypatch.setattr(backup.Path, "home", lambda: tmp_path)
+
+    backup_dir = tmp_path / "db-recovery-lab" / "m2-08"
+    backup_dir.mkdir(parents=True)
+
+    backup_file = backup_dir / "client_intake_perf_test.dump"
+    backup_file.write_bytes(b"CORRUPTED BACKUP")
+
+    checksum_file = Path(str(backup_file) + ".sha256")
+
+    # The checksum belongs to DIFFERENT content.
+    original_hash = hashlib.sha256(
+        b"ORIGINAL BACKUP"
+    ).hexdigest()
+
+    checksum_file.write_text(
+        f"{original_hash}  {backup_file.name}\n",
+        encoding="utf-8",
+    )
+
+    def forbidden_upload(*args, **kwargs):
+        pytest.fail("rclone must not run for corrupted backups")
+
+    monkeypatch.setattr(
+        backup.subprocess, "run", forbidden_upload
+    )
+
+    with pytest.raises(
+        RuntimeError, match="Backup checksum mismatch"
+    ):
+        backup.upload_backup(backup_file)
+
+def test_upload_failure_is_reported(
+    monkeypatch, tmp_path, capsys
+):
+    monkeypatch.setenv("RUN_PERF_BACKUP", "1")
+    monkeypatch.setattr(backup.Path, "home", lambda: tmp_path)
+
+    backup_dir = tmp_path / "db-recovery-lab" / "m2-08"
+    backup_dir.mkdir(parents=True)
+
+    backup_file = backup_dir / "client_intake_perf_test.dump"
+    data = b"synthetic test backup"
+    backup_file.write_bytes(data)
+
+    checksum_file = Path(str(backup_file) + ".sha256")
+    digest = hashlib.sha256(data).hexdigest()
+
+    checksum_file.write_text(
+        f"{digest}  {backup_file.name}\n",
+        encoding="utf-8",
+    )
+
+    # Pretend rclone is installed.
+    monkeypatch.setattr(
+        backup.shutil,
+        "which",
+        lambda executable: "/usr/bin/rclone",
+    )
+
+    calls = []
+
+    def fake_run(command, **kwargs):
+        calls.append(command)
+
+        if len(calls) == 1:
+            return subprocess.CompletedProcess(command, 0)
+
+        raise subprocess.CalledProcessError(
+            returncode=1,
+            cmd=command,
+            stderr="Simulated cloud upload failure",
+        )
+
+    monkeypatch.setattr(backup.subprocess, "run", fake_run)
+
+    with pytest.raises(subprocess.CalledProcessError):
+        backup.upload_backup(backup_file)
+
+    assert len(calls) == 2
+
+    assert calls[0][-1].startswith("gdrive_crypt:")
+    assert calls[1][-1].endswith(".sha256")
+
+    captured = capsys.readouterr()
+    assert "PASS: Encrypted offsite upload" not in captured.out
+
+def test_verify_crypt_remote_accepts_valid_config(monkeypatch):
+    monkeypatch.setattr(
+        backup.shutil,
+        "which",
+        lambda executable: "/usr/bin/rclone",
+    )
+
+    def fake_run(command, **kwargs):
+        assert command == [
+            "rclone", "config", "show", "gdrive_crypt"
+        ]
+
+        return subprocess.CompletedProcess(
+            command,
+            0,
+            stdout=(
+                "[gdrive_crypt]\n"
+                "type = crypt\n"
+                "remote = gdrive_backup:encrypted-postgres-backups\n"
+                "filename_encryption = standard\n"
+                "directory_name_encryption = true\n"
+            ),
+        )
+
+    monkeypatch.setattr(backup.subprocess, "run", fake_run)
+
+    backup.verify_crypt_remote()
+
+def test_verify_crypt_remote_rejects_plaintext(monkeypatch):
+    monkeypatch.setattr(
+        backup.shutil,
+        "which",
+        lambda executable: "/usr/bin/rclone",
+    )
+
+    def fake_run(command, **kwargs):
+        return subprocess.CompletedProcess(
+            command,
+            0,
+            stdout=(
+                "[gdrive_crypt]\n"
+                "type = drive\n"
+            ),
+        )
+
+    monkeypatch.setattr(backup.subprocess, "run", fake_run)
+
+    with pytest.raises(
+        RuntimeError, match="Remote is not encrypted"
+    ):
+        backup.verify_crypt_remote()
